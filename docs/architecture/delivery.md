@@ -16,3 +16,4 @@ Task 37 baseline pipeline in GitHub Actions:
 - `.github/workflows/security-audit.yml`
 - `.github/workflows/release-readiness.yml`
 - `.github/workflows/post-launch-review.yml`
+- `.github/workflows/daily-reconciliation.yml`

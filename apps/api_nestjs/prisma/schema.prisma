@@ -120,6 +120,31 @@ enum SlaBreachState {
   recovered
 }
 
+enum ReconciliationRunStatus {
+  completed
+  failed
+}
+
+enum ReconciliationItemStatus {
+  matched
+  discrepant
+}
+
+enum ReconciliationDiscrepancyType {
+  MissingInternalRecord
+  MissingProviderRecord
+  AmountMismatch
+  CurrencyMismatch
+  StatusMismatch
+  DuplicateChargeSuspected
+}
+
+enum ReconciliationDiscrepancyStatus {
+  open
+  acknowledged
+  resolved
+}
+
 model User {
   id             String              @id @default(cuid())
   email          String              @unique
@@ -137,6 +162,11 @@ model User {
   rentalEvidence RentalEvidence[]
   supportTickets SupportTicket[]
   supportNotes   SupportTicketNote[]
+  reconciliationRunsTriggered      ReconciliationRun[]         @relation("ReconciliationRunTriggeredBy")
+  reconciliationDiscrepanciesOwned ReconciliationDiscrepancy[] @relation("ReconciliationOwner")
+  reconciliationDiscrepanciesAcked ReconciliationDiscrepancy[] @relation("ReconciliationAcknowledgedBy")
+  reconciliationDiscrepanciesResolved ReconciliationDiscrepancy[] @relation("ReconciliationResolvedBy")
+  reconciliationActions            ReconciliationActionLog[]
 }
 
 model RefreshToken {
@@ -177,6 +207,10 @@ model Organization {
   analyticsEvents      AnalyticsEvent[]
   pricingExposureLogs  PricingExposureLog[]
   supportTickets       SupportTicket[]
+  reconciliationRuns   ReconciliationRun[]
+  reconciliationItems  ReconciliationItem[]
+  reconciliationDiscrepancies ReconciliationDiscrepancy[]
+  reconciliationActionLogs    ReconciliationActionLog[]
 }
 
 model Membership {
@@ -389,6 +423,8 @@ model Invoice {
   client         Client                @relation(fields: [clientId], references: [id], onDelete: Restrict)
   payments       Payment[]
   webhookEvents  PaymentWebhookEvent[]
+  reconciliationItems        ReconciliationItem[]
+  reconciliationDiscrepancies ReconciliationDiscrepancy[]
 
   @@unique([organizationId, invoiceNumber])
   @@index([organizationId, status])
@@ -411,6 +447,8 @@ model Payment {
   invoice        Invoice               @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   user           User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
   webhookEvents  PaymentWebhookEvent[]
+  reconciliationItems        ReconciliationItem[]
+  reconciliationDiscrepancies ReconciliationDiscrepancy[]
 
   @@index([organizationId, status])
 }
@@ -427,9 +465,115 @@ model PaymentWebhookEvent {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   invoice        Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   payment        Payment?     @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  reconciliationItems ReconciliationItem[]
+  reconciliationDiscrepancies ReconciliationDiscrepancy[]
 
   @@unique([provider, eventId])
   @@index([organizationId, invoiceId, processedAt])
+}
+
+model ReconciliationRun {
+  id                   String                 @id @default(cuid())
+  organizationId       String
+  periodStart          DateTime
+  periodEnd            DateTime
+  status               ReconciliationRunStatus @default(completed)
+  totalInternalRecords Int                    @default(0)
+  totalProviderRecords Int                    @default(0)
+  matchedCount         Int                    @default(0)
+  discrepancyCount     Int                    @default(0)
+  mismatchAmountCents  Int                    @default(0)
+  reportJson           Json?
+  reportMarkdown       String?
+  triggeredByUserId    String?
+  createdAt            DateTime               @default(now())
+  completedAt          DateTime?
+  organization         Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  triggeredBy          User?                  @relation("ReconciliationRunTriggeredBy", fields: [triggeredByUserId], references: [id], onDelete: SetNull)
+  items                ReconciliationItem[]
+  discrepancies        ReconciliationDiscrepancy[]
+  actionLogs           ReconciliationActionLog[]
+
+  @@index([organizationId, createdAt])
+}
+
+model ReconciliationItem {
+  id                 String                     @id @default(cuid())
+  runId              String
+  organizationId     String
+  invoiceId          String?
+  paymentId          String?
+  providerEventId    String?
+  providerRef        String?
+  internalAmountCents Int?
+  providerAmountCents Int?
+  currency           String?
+  status             ReconciliationItemStatus   @default(matched)
+  discrepancyType    ReconciliationDiscrepancyType?
+  createdAt          DateTime                   @default(now())
+  run                ReconciliationRun          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  organization       Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoice            Invoice?                   @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  payment            Payment?                   @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  providerEvent      PaymentWebhookEvent?       @relation(fields: [providerEventId], references: [id], onDelete: SetNull)
+  discrepancy        ReconciliationDiscrepancy?
+
+  @@index([runId, status])
+  @@index([organizationId, invoiceId])
+}
+
+model ReconciliationDiscrepancy {
+  id                 String                         @id @default(cuid())
+  runId              String
+  itemId             String?                        @unique
+  organizationId     String
+  invoiceId          String?
+  paymentId          String?
+  providerEventId    String?
+  type               ReconciliationDiscrepancyType
+  status             ReconciliationDiscrepancyStatus @default(open)
+  ownerUserId        String?
+  acknowledgedByUserId String?
+  acknowledgedAt     DateTime?
+  resolvedByUserId   String?
+  resolvedAt         DateTime?
+  resolutionReason   String?
+  notes              String?
+  amountDeltaCents   Int?
+  createdAt          DateTime                       @default(now())
+  updatedAt          DateTime                       @updatedAt
+  run                ReconciliationRun              @relation(fields: [runId], references: [id], onDelete: Cascade)
+  item               ReconciliationItem?            @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  organization       Organization                   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoice            Invoice?                       @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  payment            Payment?                       @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  providerEvent      PaymentWebhookEvent?          @relation(fields: [providerEventId], references: [id], onDelete: SetNull)
+  owner              User?                          @relation("ReconciliationOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  acknowledgedBy     User?                          @relation("ReconciliationAcknowledgedBy", fields: [acknowledgedByUserId], references: [id], onDelete: SetNull)
+  resolvedBy         User?                          @relation("ReconciliationResolvedBy", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+  actionLogs         ReconciliationActionLog[]
+
+  @@index([runId, status, type])
+  @@index([organizationId, createdAt])
+}
+
+model ReconciliationActionLog {
+  id              String            @id @default(cuid())
+  runId           String
+  discrepancyId   String?
+  organizationId  String
+  actorUserId     String?
+  action          String
+  note            String?
+  metadata        Json?
+  createdAt       DateTime          @default(now())
+  run             ReconciliationRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  discrepancy     ReconciliationDiscrepancy? @relation(fields: [discrepancyId], references: [id], onDelete: SetNull)
+  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor           User?             @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([runId, createdAt])
+  @@index([organizationId, createdAt])
 }
 
 model AuditLog {

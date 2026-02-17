@@ -59,6 +59,10 @@ export class AppConfigService {
     return this.env.PAYMENT_WEBHOOK_DEMO_SECRET;
   }
 
+  get reconciliationDailyToken(): string {
+    return this.env.RECONCILIATION_DAILY_TOKEN;
+  }
+
   get corsAllowedOrigins(): string[] {
     return this.env.CORS_ALLOWED_ORIGINS.split(',')
       .map((value) => value.trim())

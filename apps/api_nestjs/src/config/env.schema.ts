@@ -34,6 +34,7 @@ const envSchema = z.object({
     .min(1)
     .default('image/jpeg,image/png,image/webp,video/mp4,application/pdf'),
   PAYMENT_WEBHOOK_DEMO_SECRET: z.string().min(1).default('demo-webhook-secret'),
+  RECONCILIATION_DAILY_TOKEN: z.string().default(''),
   CORS_ALLOWED_ORIGINS: z.string().default(''),
   RATE_LIMIT_TTL_SECONDS: z.coerce.number().int().min(1).default(60),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().min(1).default(120),

@@ -1,0 +1,27 @@
+name: daily-reconciliation
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 2 * * *'
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger reconciliation endpoint
+        env:
+          RECONCILIATION_BASE_URL: ${{ secrets.RECONCILIATION_BASE_URL }}
+          RECONCILIATION_DAILY_TOKEN: ${{ secrets.RECONCILIATION_DAILY_TOKEN }}
+        run: |
+          if [ -z "$RECONCILIATION_BASE_URL" ] || [ -z "$RECONCILIATION_DAILY_TOKEN" ]; then
+            echo "Missing reconciliation endpoint configuration secrets."
+            exit 1
+          fi
+
+          curl --fail --show-error --silent \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "x-reconciliation-token: ${RECONCILIATION_DAILY_TOKEN}" \
+            -d '{}' \
+            "${RECONCILIATION_BASE_URL}/billing/reconciliation/runs/daily"

@@ -20,3 +20,4 @@ Additional operations/release docs live outside the architecture package:
 - `../analytics/pilot-kpis.md`: Pilot KPI definitions, endpoint contracts, and quality checks.
 - `../analytics/pricing-experiments.md`: Pricing experiment model, evaluation endpoints, and guardrails.
 - `../analytics/onboarding-funnel.md`: Onboarding funnel instrumentation, activation definition, and dashboard payloads.
+- `../finance/reconciliation.md`: Billing reconciliation model, discrepancy workflows, and daily scheduling.

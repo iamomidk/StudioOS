@@ -18,6 +18,7 @@ This document lists baseline environment variables for each app and service in S
 | `S3_MAX_UPLOAD_BYTES` | No | `10485760` | Maximum allowed direct-upload payload size. |
 | `S3_ALLOWED_CONTENT_TYPES` | No | `image/jpeg,image/png,image/webp,video/mp4,application/pdf` | Comma-separated upload MIME allowlist. |
 | `PAYMENT_WEBHOOK_DEMO_SECRET` | No | `change-me-payment-webhook-secret` | HMAC secret for demo payment webhook signature validation. |
+| `RECONCILIATION_DAILY_TOKEN` | No | `change-me-reconciliation-token` | Shared token expected in `x-reconciliation-token` header for daily reconciliation trigger endpoint. |
 | `CORS_ALLOWED_ORIGINS` | No | `http://localhost:3001` | Comma-separated browser origin allowlist for API CORS policy. |
 | `RATE_LIMIT_TTL_SECONDS` | No | `60` | Request-rate window length in seconds. |
 | `RATE_LIMIT_MAX_REQUESTS` | No | `120` | Maximum requests per client IP within a rate-limit window. |

@@ -20,4 +20,5 @@ Roles supported in API authorization:
 | `support.console.manage` | allow | allow | deny | deny | deny | deny |
 | `sla.report.view` | allow | allow | deny | deny | deny | deny |
 | `launch.health.view` | allow | allow | deny | deny | deny | deny |
+| `billing.reconciliation.manage` | allow | allow | deny | deny | deny | deny |
 | `client.portal` | deny | deny | deny | deny | deny | allow |
