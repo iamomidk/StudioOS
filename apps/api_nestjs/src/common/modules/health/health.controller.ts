@@ -52,6 +52,29 @@ export class HealthController {
     };
   }
 
+  @Get('failover')
+  getFailoverStatus() {
+    return {
+      status: 'ok',
+      region: this.config.regionId,
+      primaryRegion: this.config.primaryRegion,
+      failoverMode: this.config.failoverMode,
+      regionDataPolicy: this.config.regionDataPolicy,
+      trafficShiftPercentage: this.config.trafficShiftPercentage,
+      maintenanceEnabledForRegion: this.config.isRegionInMaintenance(this.config.regionId),
+      auth: {
+        tokenVerificationReady:
+          this.config.jwtAccessTokenSecret.length > 0 &&
+          this.config.jwtRefreshTokenSecret.length > 0,
+        keyDistribution: 'shared-secret'
+      },
+      queues: {
+        locality: this.config.regionDataPolicy === 'regional-boundary' ? 'regional' : 'shared',
+        duplicatePrevention: 'dedupe-job-id'
+      }
+    };
+  }
+
   @Get('workers')
   getWorkers(@Headers('x-smoke-token') smokeToken?: string) {
     this.assertSmokeAccess(smokeToken);

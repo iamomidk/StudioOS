@@ -88,7 +88,15 @@ const envSchema = z.object({
   SLA_QUOTE_RESPONSE_MINUTES: z.coerce.number().int().min(1).default(1440),
   SLA_BOOKING_CONFIRMATION_MINUTES: z.coerce.number().int().min(1).default(720),
   ENTERPRISE_DEPROVISION_GRACE_SECONDS: z.coerce.number().int().min(0).default(900),
-  BREAK_GLASS_ADMIN_EMAIL: z.string().default('')
+  BREAK_GLASS_ADMIN_EMAIL: z.string().default(''),
+  REGION_ID: z.string().min(1).default('us-east-1'),
+  PRIMARY_REGION: z.string().min(1).default('us-east-1'),
+  FAILOVER_MODE: z.enum(['off', 'passive', 'active']).default('off'),
+  REGION_DATA_POLICY: z.enum(['global', 'regional-boundary']).default('global'),
+  TRAFFIC_SHIFT_PERCENTAGE: z.coerce.number().int().min(0).max(100).default(100),
+  TRAFFIC_SHIFT_HASH_SALT: z.string().min(1).default('studioos-traffic-shift-v1'),
+  MAINTENANCE_MODE_REGIONS: z.string().default(''),
+  MAINTENANCE_BYPASS_TOKEN: z.string().default('')
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

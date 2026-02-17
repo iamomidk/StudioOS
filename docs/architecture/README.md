@@ -25,3 +25,5 @@ Additional operations/release docs live outside the architecture package:
 - `../finance/reconciliation.md`: Billing reconciliation model, discrepancy workflows, and daily scheduling.
 - `../api/partner-v1.md`: Partner API v1 auth/scopes/quotas, endpoint contract, and integration quickstart.
 - `../enterprise/enterprise-readiness.md`: Enterprise SSO/SCIM-lite controls, policy toggles, and compliance export workflow.
+- `../infra/multi-region-readiness.md`: Multi-region failover controls, regional headers, queue dedupe semantics, and drills.
+- `../infra/adr-0001-multi-region-strategy.md`: Multi-region architecture decision record (single-writer + passive failover baseline).

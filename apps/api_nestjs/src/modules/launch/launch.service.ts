@@ -34,6 +34,14 @@ export class LaunchService {
         allowlistOrgCount: this.config.publicRolloutAllowlistOrgIds.length,
         allowlistCohortCount: this.config.publicRolloutAllowlistCohortIds.length
       },
+      region: {
+        regionId: this.config.regionId,
+        primaryRegion: this.config.primaryRegion,
+        failoverMode: this.config.failoverMode,
+        dataPolicy: this.config.regionDataPolicy,
+        trafficShiftPercentage: this.config.trafficShiftPercentage,
+        maintenanceEnabledForRegion: this.config.isRegionInMaintenance(this.config.regionId)
+      },
       serviceHealth: {
         api: 'ok'
       },

@@ -19,6 +19,7 @@ import { NOTIFICATIONS_DEAD_LETTER_QUEUE } from './queues.tokens.js';
 @Injectable()
 export class QueueConsumerService {
   private readonly logger = new Logger(QueueConsumerService.name);
+  private readonly processedDedupeKeys = new Set<string>();
 
   constructor(
     private readonly notifications: NotificationDispatchService,
@@ -54,32 +55,50 @@ export class QueueConsumerService {
   }
 
   processNotification(job: Job<NotificationJobPayload>): Promise<void> {
-    this.logger.log(`Processing notification job ${job.id ?? 'unknown'} (${job.data.template})`);
+    const dedupeKey = job.data.meta?.dedupeKey;
+    if (dedupeKey && this.processedDedupeKeys.has(dedupeKey)) {
+      this.logger.warn(`Skipping duplicate notification job for dedupe key ${dedupeKey}`);
+      return Promise.resolve();
+    }
 
-    return this.notifications.dispatch(job.data).catch(async (error: unknown) => {
-      const attemptsLimit = job.opts.attempts ?? DEFAULT_JOB_OPTIONS.attempts ?? 1;
-      const nextAttempt = (job.attemptsMade ?? 0) + 1;
-      const isLastAttempt = nextAttempt >= attemptsLimit;
-      const isTransient = error instanceof NotificationDispatchError && error.kind === 'transient';
+    this.logger.log(
+      `Processing notification job ${job.id ?? 'unknown'} (${job.data.template}) from ${
+        job.data.meta?.regionOrigin ?? 'unknown-region'
+      }`
+    );
 
-      if (isTransient && !isLastAttempt) {
-        throw error;
-      }
+    return this.notifications
+      .dispatch(job.data)
+      .catch(async (error: unknown) => {
+        const attemptsLimit = job.opts.attempts ?? DEFAULT_JOB_OPTIONS.attempts ?? 1;
+        const nextAttempt = (job.attemptsMade ?? 0) + 1;
+        const isLastAttempt = nextAttempt >= attemptsLimit;
+        const isTransient =
+          error instanceof NotificationDispatchError && error.kind === 'transient';
 
-      await this.notificationsDeadLetterQueue.add(
-        'dead-letter-notification',
-        {
-          original: job.data,
-          reason: error instanceof Error ? error.message : 'Unknown notification failure',
-          attemptsMade: nextAttempt
-        },
-        {
-          attempts: 1,
-          removeOnComplete: true,
-          removeOnFail: 50
+        if (isTransient && !isLastAttempt) {
+          throw error;
         }
-      );
-    });
+
+        await this.notificationsDeadLetterQueue.add(
+          'dead-letter-notification',
+          {
+            original: job.data,
+            reason: error instanceof Error ? error.message : 'Unknown notification failure',
+            attemptsMade: nextAttempt
+          },
+          {
+            attempts: 1,
+            removeOnComplete: true,
+            removeOnFail: 50
+          }
+        );
+      })
+      .then(() => {
+        if (dedupeKey) {
+          this.processedDedupeKeys.add(dedupeKey);
+        }
+      });
   }
 
   processDeadLetterNotification(job: Job<DeadLetterNotificationJobPayload>): Promise<void> {
@@ -90,12 +109,20 @@ export class QueueConsumerService {
   }
 
   processInvoiceReminder(job: Job<InvoiceReminderJobPayload>): Promise<void> {
-    this.logger.log(`Processing invoice reminder job ${job.id ?? 'unknown'}`);
+    this.logger.log(
+      `Processing invoice reminder job ${job.id ?? 'unknown'} from ${
+        job.data.meta?.regionOrigin ?? 'unknown-region'
+      }`
+    );
     return Promise.resolve();
   }
 
   processMediaJob(job: Job<MediaJobPayload>): Promise<void> {
-    this.logger.log(`Processing media job ${job.id ?? 'unknown'}`);
+    this.logger.log(
+      `Processing media job ${job.id ?? 'unknown'} from ${
+        job.data.meta?.regionOrigin ?? 'unknown-region'
+      }`
+    );
     return Promise.resolve();
   }
 }

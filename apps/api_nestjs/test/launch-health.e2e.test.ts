@@ -17,6 +17,10 @@ const env = {
   REDIS_URL: 'redis://localhost:6379',
   JWT_ACCESS_TOKEN_SECRET: 'access-secret-for-tests',
   JWT_REFRESH_TOKEN_SECRET: 'refresh-secret-for-tests',
+  REGION_ID: 'us-east-1',
+  PRIMARY_REGION: 'us-east-1',
+  FAILOVER_MODE: 'off',
+  REGION_DATA_POLICY: 'global',
   FEATURE_PUBLIC_LAUNCH_ENABLED: 'true',
   PUBLIC_ROLLOUT_PERCENTAGE: '100'
 };
@@ -83,11 +87,14 @@ void test('launch health dashboard endpoint returns rollout and ops status paylo
   assert.equal(launchHealth.status, 200);
   const payload = launchHealth.body as {
     rollout: { publicLaunchEnabled: boolean };
+    region: { regionId: string; failoverMode: string };
     errorBudget: { burnRate: number };
     queue: { depth: Record<string, number> };
     webhook: { failureRate: number };
   };
   assert.equal(payload.rollout.publicLaunchEnabled, true);
+  assert.equal(payload.region.regionId, 'us-east-1');
+  assert.equal(payload.region.failoverMode, 'off');
   assert.equal(typeof payload.errorBudget.burnRate, 'number');
   assert.equal(typeof payload.queue.depth, 'object');
   assert.equal(typeof payload.webhook.failureRate, 'number');

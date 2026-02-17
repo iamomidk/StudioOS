@@ -3,6 +3,7 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 import { HealthModule } from './common/modules/health/health.module.js';
 import { MetricsModule } from './common/modules/metrics/metrics.module.js';
+import { RegionRoutingGuard } from './common/security/region-routing.guard.js';
 import { RateLimitGuard } from './common/security/rate-limit.guard.js';
 import { SecurityHeadersInterceptor } from './common/security/security-headers.interceptor.js';
 import { ConfigModule } from './config/config.module.js';
@@ -58,6 +59,10 @@ import { UsersModule } from './modules/users/users.module.js';
     EnterpriseModule
   ],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: RegionRoutingGuard
+    },
     {
       provide: APP_GUARD,
       useClass: RateLimitGuard

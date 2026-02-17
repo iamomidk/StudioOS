@@ -227,6 +227,64 @@ export class AppConfigService {
     return this.env.BREAK_GLASS_ADMIN_EMAIL;
   }
 
+  get regionId(): string {
+    return this.env.REGION_ID;
+  }
+
+  get primaryRegion(): string {
+    return this.env.PRIMARY_REGION;
+  }
+
+  get failoverMode(): AppEnv['FAILOVER_MODE'] {
+    return this.env.FAILOVER_MODE;
+  }
+
+  get regionDataPolicy(): AppEnv['REGION_DATA_POLICY'] {
+    return this.env.REGION_DATA_POLICY;
+  }
+
+  get trafficShiftPercentage(): number {
+    return this.env.TRAFFIC_SHIFT_PERCENTAGE;
+  }
+
+  get maintenanceModeRegions(): string[] {
+    return this.env.MAINTENANCE_MODE_REGIONS.split(',')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+  }
+
+  get maintenanceBypassToken(): string {
+    return this.env.MAINTENANCE_BYPASS_TOKEN;
+  }
+
+  shouldServeTraffic(key: string): boolean {
+    if (this.failoverMode === 'off' || this.failoverMode === 'active') {
+      return true;
+    }
+
+    if (this.regionId === this.primaryRegion) {
+      return true;
+    }
+
+    if (this.trafficShiftPercentage >= 100) {
+      return true;
+    }
+
+    if (this.trafficShiftPercentage <= 0) {
+      return false;
+    }
+
+    const digest = createHash('sha256')
+      .update(`${this.env.TRAFFIC_SHIFT_HASH_SALT}:${key}`)
+      .digest('hex');
+    const bucket = Number.parseInt(digest.slice(0, 8), 16) % 100;
+    return bucket < this.trafficShiftPercentage;
+  }
+
+  isRegionInMaintenance(regionId: string): boolean {
+    return this.maintenanceModeRegions.includes(regionId);
+  }
+
   isPublicRolloutEnabledFor(organizationId: string, pilotCohortId: string | null): boolean {
     if (!this.featurePublicLaunchEnabled || this.publicModulesGlobalKillSwitch) {
       return false;

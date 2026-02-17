@@ -18,10 +18,13 @@ class FakeDeadLetterQueue implements QueuePort {
 }
 
 class FakeNotificationDispatchService {
+  public dispatchCalls = 0;
+
   constructor(private readonly behavior: 'ok' | 'transient' | 'permanent') {}
 
   dispatch(payload: NotificationJobPayload): Promise<void> {
     void payload;
+    this.dispatchCalls += 1;
     if (this.behavior === 'ok') {
       return Promise.resolve();
     }
@@ -34,13 +37,14 @@ class FakeNotificationDispatchService {
 
 function buildConsumer(behavior: 'ok' | 'transient' | 'permanent') {
   const deadLetterQueue = new FakeDeadLetterQueue();
+  const dispatch = new FakeNotificationDispatchService(behavior);
   const consumer = new QueueConsumerService(
-    new FakeNotificationDispatchService(behavior) as never,
+    dispatch as never,
     deadLetterQueue,
     new MetricsService()
   );
 
-  return { consumer, deadLetterQueue };
+  return { consumer, deadLetterQueue, dispatch };
 }
 
 void test('QueueConsumerService routes media jobs to media processor', async () => {
@@ -114,4 +118,42 @@ void test('notification transient failure on last attempt moves job to dead-lett
   });
 
   assert.equal(deadLetterQueue.added.length, 1);
+});
+
+void test('notification duplicate dedupe key is processed once during failover replay', async () => {
+  const { consumer, dispatch } = buildConsumer('ok');
+
+  await consumer.process(QUEUE_NAMES.notifications, {
+    id: 'job-5',
+    data: {
+      recipientUserId: 'user-1',
+      channel: 'email',
+      template: 'invoice-issued',
+      meta: {
+        regionOrigin: 'us-east-1',
+        failoverMode: 'passive',
+        dedupeKey: 'notify-dedupe-1'
+      }
+    },
+    attemptsMade: 0,
+    opts: { attempts: 3 }
+  } as never);
+
+  await consumer.process(QUEUE_NAMES.notifications, {
+    id: 'job-6',
+    data: {
+      recipientUserId: 'user-1',
+      channel: 'email',
+      template: 'invoice-issued',
+      meta: {
+        regionOrigin: 'us-west-2',
+        failoverMode: 'passive',
+        dedupeKey: 'notify-dedupe-1'
+      }
+    },
+    attemptsMade: 0,
+    opts: { attempts: 3 }
+  } as never);
+
+  assert.equal(dispatch.dispatchCalls, 1);
 });
