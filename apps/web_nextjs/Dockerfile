@@ -31,11 +31,10 @@ RUN apt-get update \
 RUN corepack enable
 WORKDIR /workspace
 
-COPY --from=build /workspace /workspace
-
 RUN groupadd --gid 1001 studio \
-  && useradd --uid 1001 --gid 1001 --create-home studio \
-  && chown -R studio:studio /workspace
+  && useradd --uid 1001 --gid 1001 --create-home studio
+
+COPY --from=build --chown=studio:studio /workspace /workspace
 
 USER studio
 
