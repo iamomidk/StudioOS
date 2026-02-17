@@ -42,7 +42,9 @@ const envSchema = z.object({
   SMOKE_OPS_ENABLED: booleanFromEnv.default(false),
   SMOKE_CHECK_TOKEN: z.string().default(''),
   FEATURE_MARKETPLACE_ENABLED: booleanFromEnv.default(false),
-  FEATURE_DISPUTES_ENABLED: booleanFromEnv.default(false)
+  FEATURE_DISPUTES_ENABLED: booleanFromEnv.default(false),
+  FEATURE_PRICING_EXPERIMENTS_ENABLED: booleanFromEnv.default(false),
+  PRICING_EXPERIMENTS_GLOBAL_KILL_SWITCH: booleanFromEnv.default(false)
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service.js';
+import { PricingExperimentsService } from './pricing-experiments.service.js';
 
 interface RecordEventInput {
   organizationId: string;
@@ -17,7 +18,10 @@ interface RecordEventInput {
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pricingExperiments: PricingExperimentsService
+  ) {}
 
   async recordEvent(input: RecordEventInput): Promise<void> {
     if (input.idempotencyKey) {
@@ -35,7 +39,7 @@ export class AnalyticsService {
       select: { pilotOrg: true, pilotCohortId: true }
     });
 
-    await this.prisma.analyticsEvent.create({
+    const created = await this.prisma.analyticsEvent.create({
       data: {
         organizationId: input.organizationId,
         eventName: input.eventName,
@@ -49,6 +53,21 @@ export class AnalyticsService {
         pilotOrg: organization?.pilotOrg ?? false,
         pilotCohortId: organization?.pilotCohortId ?? null
       }
+    });
+
+    const payload =
+      created.payload === null || typeof created.payload !== 'object'
+        ? null
+        : (created.payload as Record<string, unknown>);
+
+    await this.pricingExperiments.linkConversionForAnalyticsEvent({
+      id: created.id,
+      organizationId: created.organizationId,
+      eventName: created.eventName,
+      occurredAt: created.occurredAt,
+      entityType: created.entityType,
+      entityId: created.entityId,
+      payload
     });
   }
 

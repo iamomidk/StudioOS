@@ -29,6 +29,8 @@ This document lists baseline environment variables for each app and service in S
 | `ALERT_ROUTING_KEY` | No | `` | Optional alert routing key/token header value for webhook-based routing. |
 | `FEATURE_MARKETPLACE_ENABLED` | No | `false` | Enables marketplace search API feature skeleton. |
 | `FEATURE_DISPUTES_ENABLED` | No | `false` | Enables disputes module API feature skeleton. |
+| `FEATURE_PRICING_EXPERIMENTS_ENABLED` | No | `false` | Enables server-side pricing experiment evaluation for pilot organizations. |
+| `PRICING_EXPERIMENTS_GLOBAL_KILL_SWITCH` | No | `false` | Global emergency kill switch that disables all pricing experiments immediately. |
 
 ## apps/web_nextjs
 

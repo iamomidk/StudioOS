@@ -95,4 +95,12 @@ export class AppConfigService {
   get featureDisputesEnabled(): boolean {
     return this.env.FEATURE_DISPUTES_ENABLED;
   }
+
+  get featurePricingExperimentsEnabled(): boolean {
+    return this.env.FEATURE_PRICING_EXPERIMENTS_ENABLED;
+  }
+
+  get pricingExperimentsGlobalKillSwitch(): boolean {
+    return this.env.PRICING_EXPERIMENTS_GLOBAL_KILL_SWITCH;
+  }
 }

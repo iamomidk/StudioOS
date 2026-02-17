@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { AnalyticsService } from '../analytics/analytics.service.js';
+import { PricingExperimentsService } from '../analytics/pricing-experiments.service.js';
 import type { AccessClaims } from '../auth/rbac/access-token.guard.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateQuoteDto } from './dto/create-quote.dto.js';
@@ -19,7 +20,8 @@ const STATUS_TRANSITIONS: Record<QuoteStatus, QuoteStatus[]> = {
 export class QuotesService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly analytics: AnalyticsService
+    private readonly analytics: AnalyticsService,
+    private readonly pricingExperiments: PricingExperimentsService
   ) {}
 
   async listQuotes(organizationId: string) {
@@ -77,6 +79,15 @@ export class QuotesService {
           totalCents
         }
       }
+    });
+
+    await this.pricingExperiments.evaluatePricing({
+      organizationId: dto.organizationId,
+      ...(actor?.sub ? { userId: actor.sub } : {}),
+      baseAmountCents: totalCents,
+      entityType: 'Quote',
+      entityId: quote.id,
+      source: 'api'
     });
 
     return quote;
@@ -179,7 +190,8 @@ export class QuotesService {
             actorRole: actor?.roles?.[0] ?? 'system',
             source: 'api',
             entityType: 'Booking',
-            entityId: bookingId
+            entityId: bookingId,
+            payload: { quoteId: quote.id }
           });
         }
       }

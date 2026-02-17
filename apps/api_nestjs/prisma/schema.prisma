@@ -85,6 +85,19 @@ enum PaymentStatus {
   refunded
 }
 
+enum ExperimentStatus {
+  draft
+  active
+  paused
+  stopped
+}
+
+enum AllocationTargetType {
+  all
+  organization
+  cohort
+}
+
 model User {
   id             String         @id @default(cuid())
   email          String         @unique
@@ -138,6 +151,7 @@ model Organization {
   auditLogs      AuditLog[]
   rentalEvidence RentalEvidence[]
   analyticsEvents AnalyticsEvent[]
+  pricingExposureLogs PricingExposureLog[]
 }
 
 model Membership {
@@ -424,7 +438,95 @@ model AnalyticsEvent {
   pilotCohortId  String?
   createdAt      DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversionLinks PricingConversionEventLink[]
 
   @@index([organizationId, eventName, occurredAt])
   @@index([pilotOrg, pilotCohortId, occurredAt])
+}
+
+model PricingExperiment {
+  id                String                  @id @default(cuid())
+  key               String                  @unique
+  name              String
+  description       String?
+  status            ExperimentStatus        @default(draft)
+  startsAt          DateTime?
+  endsAt            DateTime?
+  killSwitchEnabled Boolean                 @default(false)
+  maxExposure       Int?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  variants          PricingVariant[]
+  allocationRules   PricingAllocationRule[]
+  exposureLogs      PricingExposureLog[]
+
+  @@index([status, startsAt, endsAt])
+}
+
+model PricingVariant {
+  id                String            @id @default(cuid())
+  experimentId      String
+  key               String
+  name              String
+  weight            Int               @default(1)
+  pricingMultiplier Float?
+  config            Json?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  experiment        PricingExperiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  exposureLogs      PricingExposureLog[]
+
+  @@unique([experimentId, key])
+  @@index([experimentId])
+}
+
+model PricingAllocationRule {
+  id            String              @id @default(cuid())
+  experimentId  String
+  targetType    AllocationTargetType
+  targetValue   String?
+  createdAt     DateTime            @default(now())
+  experiment    PricingExperiment   @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  @@index([experimentId, targetType, targetValue])
+}
+
+model PricingExposureLog {
+  id               String                     @id @default(cuid())
+  experimentId     String
+  variantId        String
+  organizationId   String
+  subjectType      String
+  subjectKey       String
+  source           String
+  entityType       String?
+  entityId         String?
+  idempotencyKey   String?                    @unique
+  occurredAt       DateTime                   @default(now())
+  createdAt        DateTime                   @default(now())
+  experiment       PricingExperiment          @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  variant          PricingVariant             @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  organization     Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversionLinks  PricingConversionEventLink[]
+
+  @@index([experimentId, variantId, occurredAt])
+  @@index([organizationId, occurredAt])
+  @@index([subjectType, subjectKey, occurredAt])
+  @@index([entityType, entityId, occurredAt])
+}
+
+model PricingConversionEventLink {
+  id             String             @id @default(cuid())
+  exposureLogId  String
+  analyticsEventId String
+  eventName      String
+  entityType     String?
+  entityId       String?
+  occurredAt     DateTime
+  createdAt      DateTime           @default(now())
+  exposureLog    PricingExposureLog @relation(fields: [exposureLogId], references: [id], onDelete: Cascade)
+  analyticsEvent AnalyticsEvent     @relation(fields: [analyticsEventId], references: [id], onDelete: Cascade)
+
+  @@unique([exposureLogId, analyticsEventId])
+  @@index([eventName, occurredAt])
 }

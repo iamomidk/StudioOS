@@ -15,4 +15,5 @@ Roles supported in API authorization:
 | `shoot.execute` | allow | allow | allow | deny | deny | deny |
 | `edit.execute` | allow | allow | deny | allow | deny | deny |
 | `rental.manage` | allow | allow | deny | deny | allow | deny |
+| `pricing.experiments.manage` | allow | allow | deny | deny | deny | deny |
 | `client.portal` | deny | deny | deny | deny | deny | allow |
