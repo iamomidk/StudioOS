@@ -31,6 +31,8 @@ This document lists baseline environment variables for each app and service in S
 | `FEATURE_DISPUTES_ENABLED` | No | `false` | Enables disputes module API feature skeleton. |
 | `FEATURE_PRICING_EXPERIMENTS_ENABLED` | No | `false` | Enables server-side pricing experiment evaluation for pilot organizations. |
 | `PRICING_EXPERIMENTS_GLOBAL_KILL_SWITCH` | No | `false` | Global emergency kill switch that disables all pricing experiments immediately. |
+| `ONBOARDING_STEPS` | No | `org_created,team_invited,first_lead_created,first_quote_sent,first_booking_created,first_rental_reserved,first_invoice_issued` | Ordered onboarding funnel steps used for RC-07 activation analytics. |
+| `ACTIVATION_REQUIRED_STEPS` | No | `first_booking_created,first_invoice_issued` | Comma-separated step list that defines activation achievement without code changes. |
 
 ## apps/web_nextjs
 

@@ -4,6 +4,14 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { PricingExperimentsService } from './pricing-experiments.service.js';
 
+const ONBOARDING_STEP_BY_EVENT: Record<string, string> = {
+  lead_created: 'first_lead_created',
+  quote_sent: 'first_quote_sent',
+  booking_created: 'first_booking_created',
+  rental_reserved: 'first_rental_reserved',
+  invoice_issued: 'first_invoice_issued'
+};
+
 interface RecordEventInput {
   organizationId: string;
   eventName: string;
@@ -69,6 +77,20 @@ export class AnalyticsService {
       entityId: created.entityId,
       payload
     });
+
+    const onboardingStep = ONBOARDING_STEP_BY_EVENT[created.eventName];
+    if (onboardingStep) {
+      await this.recordEvent({
+        organizationId: created.organizationId,
+        eventName: onboardingStep,
+        actorRole: created.actorRole,
+        source: created.source as 'web' | 'mobile' | 'api',
+        ...(created.entityType ? { entityType: created.entityType } : {}),
+        ...(created.entityId ? { entityId: created.entityId } : {}),
+        occurredAt: created.occurredAt,
+        idempotencyKey: `onboarding:${onboardingStep}:${created.organizationId}`
+      });
+    }
   }
 
   async getPilotKpis(filters: { organizationId?: string; pilotCohortId?: string; days: number }) {

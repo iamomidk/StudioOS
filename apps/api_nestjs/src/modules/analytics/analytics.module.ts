@@ -6,13 +6,21 @@ import { RolesGuard } from '../auth/rbac/roles.guard.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { AnalyticsController } from './analytics.controller.js';
 import { AnalyticsService } from './analytics.service.js';
+import { OnboardingFunnelController } from './onboarding-funnel.controller.js';
+import { OnboardingFunnelService } from './onboarding-funnel.service.js';
 import { PricingExperimentsController } from './pricing-experiments.controller.js';
 import { PricingExperimentsService } from './pricing-experiments.service.js';
 
 @Module({
   imports: [ConfigModule, PrismaModule],
-  controllers: [AnalyticsController, PricingExperimentsController],
-  providers: [AnalyticsService, PricingExperimentsService, AccessTokenGuard, RolesGuard],
-  exports: [AnalyticsService, PricingExperimentsService]
+  controllers: [AnalyticsController, PricingExperimentsController, OnboardingFunnelController],
+  providers: [
+    AnalyticsService,
+    PricingExperimentsService,
+    OnboardingFunnelService,
+    AccessTokenGuard,
+    RolesGuard
+  ],
+  exports: [AnalyticsService, PricingExperimentsService, OnboardingFunnelService]
 })
 export class AnalyticsModule {}

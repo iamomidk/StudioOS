@@ -103,4 +103,16 @@ export class AppConfigService {
   get pricingExperimentsGlobalKillSwitch(): boolean {
     return this.env.PRICING_EXPERIMENTS_GLOBAL_KILL_SWITCH;
   }
+
+  get onboardingSteps(): string[] {
+    return this.env.ONBOARDING_STEPS.split(',')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+  }
+
+  get activationRequiredSteps(): string[] {
+    return this.env.ACTIVATION_REQUIRED_STEPS.split(',')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+  }
 }

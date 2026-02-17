@@ -44,7 +44,13 @@ const envSchema = z.object({
   FEATURE_MARKETPLACE_ENABLED: booleanFromEnv.default(false),
   FEATURE_DISPUTES_ENABLED: booleanFromEnv.default(false),
   FEATURE_PRICING_EXPERIMENTS_ENABLED: booleanFromEnv.default(false),
-  PRICING_EXPERIMENTS_GLOBAL_KILL_SWITCH: booleanFromEnv.default(false)
+  PRICING_EXPERIMENTS_GLOBAL_KILL_SWITCH: booleanFromEnv.default(false),
+  ONBOARDING_STEPS: z
+    .string()
+    .default(
+      'org_created,team_invited,first_lead_created,first_quote_sent,first_booking_created,first_rental_reserved,first_invoice_issued'
+    ),
+  ACTIVATION_REQUIRED_STEPS: z.string().default('first_booking_created,first_invoice_issued')
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

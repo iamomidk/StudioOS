@@ -16,3 +16,4 @@ Additional operations/release docs live outside the architecture package:
 - `../ops/backup-restore.md`: Backup verification automation, restore drill, and manual fallback.
 - `../analytics/pilot-kpis.md`: Pilot KPI definitions, endpoint contracts, and quality checks.
 - `../analytics/pricing-experiments.md`: Pricing experiment model, evaluation endpoints, and guardrails.
+- `../analytics/onboarding-funnel.md`: Onboarding funnel instrumentation, activation definition, and dashboard payloads.
