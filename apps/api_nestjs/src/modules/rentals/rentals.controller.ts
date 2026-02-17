@@ -5,6 +5,7 @@ import { CreateRentalEvidenceDto } from './dto/create-rental-evidence.dto.js';
 import { CreateRentalOrderDto } from './dto/create-rental-order.dto.js';
 import { ListRentalEvidenceDto } from './dto/list-rental-evidence.dto.js';
 import { ListRentalOrdersDto } from './dto/list-rental-orders.dto.js';
+import { ListRentalSyncDiagnosticsDto } from './dto/list-rental-sync-diagnostics.dto.js';
 import { UpdateRentalStatusDto } from './dto/update-rental-status.dto.js';
 import { RentalsService } from './rentals.service.js';
 
@@ -30,11 +31,15 @@ export class RentalsController {
     @Body() dto: UpdateRentalStatusDto,
     @Req() request: AuthenticatedRequest
   ) {
-    return this.rentalsService.updateStatus(
-      rentalOrderId,
+    return this.rentalsService.updateStatus(rentalOrderId, query.organizationId, dto, request.user);
+  }
+
+  @Get('sync-diagnostics')
+  listSyncDiagnostics(@Query() query: ListRentalSyncDiagnosticsDto) {
+    return this.rentalsService.listSyncDiagnostics(
       query.organizationId,
-      dto.status,
-      request.user
+      query.deviceSessionId,
+      query.limit
     );
   }
 

@@ -118,6 +118,79 @@ class _RentalsFieldScreenState extends ConsumerState<RentalsFieldScreen> {
             ),
             const SizedBox(height: 8),
             Text('Pending offline actions: ${state.pendingActionCount}'),
+            Text('Needs manual review: ${state.manualReviewCount}'),
+            if (state.pendingConflicts.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              const Text('Sync conflicts'),
+              ...state.pendingConflicts.map((conflictEntry) {
+                final operationId =
+                    conflictEntry['operationId']?.toString() ?? '';
+                final conflict = conflictEntry['conflict'];
+                final conflictMap = conflict is Map<dynamic, dynamic>
+                    ? conflict.map(
+                        (key, value) => MapEntry(key.toString(), value),
+                      )
+                    : const <String, dynamic>{};
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Operation ${operationId.length > 10 ? operationId.substring(0, 10) : operationId}',
+                        ),
+                        Text(
+                          conflictMap['message']?.toString() ??
+                              'Conflict detected',
+                        ),
+                        Text(
+                          'Server version: ${conflictMap['server_version'] ?? 'unknown'}',
+                        ),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            OutlinedButton(
+                              onPressed: () async {
+                                await ref
+                                    .read(rentalsControllerProvider.notifier)
+                                    .resolveConflict(
+                                      operationId: operationId,
+                                      resolution: 'keep_mine',
+                                    );
+                              },
+                              child: const Text('Keep Mine'),
+                            ),
+                            OutlinedButton(
+                              onPressed: () async {
+                                await ref
+                                    .read(rentalsControllerProvider.notifier)
+                                    .resolveConflict(
+                                      operationId: operationId,
+                                      resolution: 'keep_server',
+                                    );
+                              },
+                              child: const Text('Keep Server'),
+                            ),
+                            OutlinedButton(
+                              onPressed: () async {
+                                await ref
+                                    .read(rentalsControllerProvider.notifier)
+                                    .resolveConflict(
+                                      operationId: operationId,
+                                      resolution: 'merge',
+                                    );
+                              },
+                              child: const Text('Merge'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ],
             if (state.infoMessage != null) ...[
               const SizedBox(height: 6),
               Text(

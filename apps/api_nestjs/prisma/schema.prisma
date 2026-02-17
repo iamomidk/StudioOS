@@ -120,6 +120,14 @@ enum SlaBreachState {
   recovered
 }
 
+enum MobileSyncState {
+  pending
+  synced
+  conflict
+  manual_review
+  failed
+}
+
 enum ReconciliationRunStatus {
   completed
   failed
@@ -194,6 +202,7 @@ model User {
   purgeRequestsRequested          EnterprisePurgeRequest[] @relation("EnterprisePurgeRequestRequestedBy")
   purgeRequestsApproved           EnterprisePurgeRequest[] @relation("EnterprisePurgeRequestApprovedBy")
   purgeRequestsTarget             EnterprisePurgeRequest[] @relation("EnterprisePurgeRequestTargetUser")
+  rentalSyncDiagnosticsAsLastActor RentalSyncDiagnostic[]
 }
 
 model RefreshToken {
@@ -239,6 +248,7 @@ model Organization {
   paymentWebhookEvents PaymentWebhookEvent[]
   auditLogs            AuditLog[]
   rentalEvidence       RentalEvidence[]
+  rentalSyncDiagnostics RentalSyncDiagnostic[]
   analyticsEvents      AnalyticsEvent[]
   pricingExposureLogs  PricingExposureLog[]
   supportTickets       SupportTicket[]
@@ -425,8 +435,35 @@ model RentalOrder {
   client          Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
   assignedUser    User?             @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
   evidence        RentalEvidence[]
+  syncDiagnostics RentalSyncDiagnostic[]
 
   @@index([organizationId, status])
+}
+
+model RentalSyncDiagnostic {
+  id                String          @id @default(cuid())
+  organizationId    String
+  rentalOrderId     String
+  deviceSessionId   String
+  operationId       String          @unique
+  operationType     String
+  syncState         MobileSyncState @default(pending)
+  payloadHash       String
+  baseVersion       String?
+  serverVersion     String?
+  conflictingFields String[]
+  lastActorUserId   String?
+  lastUpdatedAt     DateTime?
+  retryCount        Int             @default(0)
+  lastError         String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  rentalOrder       RentalOrder     @relation(fields: [rentalOrderId], references: [id], onDelete: Cascade)
+  lastActor         User?           @relation(fields: [lastActorUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, deviceSessionId, updatedAt])
+  @@index([organizationId, syncState, updatedAt])
 }
 
 model RentalEvidence {

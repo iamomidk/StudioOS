@@ -85,12 +85,28 @@ class StudioOsApiClient {
     required String rentalOrderId,
     required String organizationId,
     required String status,
+    String? baseVersion,
+    String? operationId,
+    String? deviceSessionId,
+    String? payloadHash,
+    int? retryCount,
   }) {
     return _request(
       'PATCH',
       '/rentals/${Uri.encodeComponent(rentalOrderId)}/status',
       query: {'organizationId': organizationId},
-      body: {'status': status},
+      body: {
+        'status': status,
+        if (baseVersion != null && baseVersion.isNotEmpty)
+          'baseVersion': baseVersion,
+        if (operationId != null && operationId.isNotEmpty)
+          'operationId': operationId,
+        if (deviceSessionId != null && deviceSessionId.isNotEmpty)
+          'deviceSessionId': deviceSessionId,
+        if (payloadHash != null && payloadHash.isNotEmpty)
+          'payloadHash': payloadHash,
+        if (retryCount != null) 'retryCount': retryCount,
+      },
     );
   }
 

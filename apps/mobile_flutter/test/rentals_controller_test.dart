@@ -5,9 +5,13 @@ import 'package:studioos_mobile_flutter/features/rentals/rentals_controller.dart
 import 'package:studioos_mobile_flutter/generated/studioos_api_client.dart';
 
 class _FakeRentalsApiClient implements RentalsApiClientPort {
-  _FakeRentalsApiClient({required this.shouldFailStatusUpdate});
+  _FakeRentalsApiClient({
+    required this.shouldFailStatusUpdate,
+    this.failWithConflict = false,
+  });
 
   final bool shouldFailStatusUpdate;
+  final bool failWithConflict;
   int updateCalls = 0;
 
   @override
@@ -51,6 +55,7 @@ class _FakeRentalsApiClient implements RentalsApiClientPort {
         'status': 'reserved',
         'startsAt': '2026-01-01T10:00:00.000Z',
         'endsAt': '2026-01-01T12:00:00.000Z',
+        'version': '2026-01-01T10:00:00.000Z',
       },
     ];
   }
@@ -60,9 +65,30 @@ class _FakeRentalsApiClient implements RentalsApiClientPort {
     required String rentalOrderId,
     required String organizationId,
     required String status,
+    String? baseVersion,
+    String? operationId,
+    String? deviceSessionId,
+    String? payloadHash,
+    int? retryCount,
   }) async {
     updateCalls += 1;
     if (shouldFailStatusUpdate) {
+      if (failWithConflict) {
+        throw StudioOsApiException(
+          409,
+          'Conflict',
+          body: {
+            'error': {
+              'code': 'RENTAL_VERSION_CONFLICT',
+              'message': 'Rental order was updated by another actor.',
+              'server_version': '2026-01-01T11:00:00.000Z',
+              'conflicting_fields': ['status'],
+              'last_actor': 'user-2',
+              'last_updated_at': '2026-01-01T11:00:00.000Z',
+            },
+          },
+        );
+      }
       throw StudioOsApiException(503, 'Server error');
     }
     return {'id': rentalOrderId, 'status': status};
@@ -112,6 +138,7 @@ void main() {
 
     final pending = await queue.readActions();
     expect(pending.length, 1);
+    expect(pending.first.operationType, 'status');
     expect(controller.state.pendingActionCount, 1);
     expect(controller.state.infoMessage, contains('queued'));
   });
@@ -122,12 +149,14 @@ void main() {
       final queue = _InMemoryOfflineQueueRepository();
       await queue.enqueueAction(
         OfflineAction(
-          id: '1',
-          type: 'status',
-          rentalOrderId: 'rental-1',
+          operationId: 'status-rental-1-1',
+          entityType: 'rental',
+          entityId: 'rental-1',
+          operationType: 'status',
           organizationId: 'org-1',
           payload: {'status': 'picked_up'},
-          queuedAt: DateTime.now().toUtc(),
+          payloadHash: 'hash-1',
+          localTimestamp: DateTime.now().toUtc(),
         ),
       );
 
@@ -145,4 +174,38 @@ void main() {
       expect(controller.state.pendingActionCount, 0);
     },
   );
+
+  test('version conflict moves queued action to manual review', () async {
+    final queue = _InMemoryOfflineQueueRepository();
+    await queue.enqueueAction(
+      OfflineAction(
+        operationId: 'status-rental-1-2',
+        entityType: 'rental',
+        entityId: 'rental-1',
+        operationType: 'status',
+        organizationId: 'org-1',
+        payload: {'status': 'returned'},
+        payloadHash: 'hash-2',
+        localTimestamp: DateTime.now().toUtc(),
+        baseVersion: '2026-01-01T10:00:00.000Z',
+        deviceSessionId: 'device-1',
+      ),
+    );
+
+    final controller = RentalsController(
+      apiClient: _FakeRentalsApiClient(
+        shouldFailStatusUpdate: true,
+        failWithConflict: true,
+      ),
+      offlineQueueRepository: queue,
+    );
+
+    await controller.syncPendingActions(organizationId: 'org-1');
+
+    final pending = await queue.readActions();
+    expect(pending.length, 1);
+    expect(pending.first.syncState, OfflineSyncState.manualReview);
+    expect(controller.state.manualReviewCount, 1);
+    expect(controller.state.pendingConflicts.length, 1);
+  });
 }

@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException
 } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 
 import { AnalyticsService } from '../analytics/analytics.service.js';
 import type { AccessClaims } from '../auth/rbac/access-token.guard.js';
@@ -12,7 +13,10 @@ import { RiskService } from '../risk/risk.service.js';
 import { CreateRentalEvidenceDto } from './dto/create-rental-evidence.dto.js';
 import { CreateRentalOrderDto } from './dto/create-rental-order.dto.js';
 import { ListRentalEvidenceDto } from './dto/list-rental-evidence.dto.js';
-import type { RentalLifecycleStatus } from './dto/update-rental-status.dto.js';
+import {
+  type RentalLifecycleStatus,
+  type UpdateRentalStatusDto
+} from './dto/update-rental-status.dto.js';
 
 const STATUS_TRANSITIONS: Record<RentalLifecycleStatus, RentalLifecycleStatus[]> = {
   reserved: ['picked_up', 'cancelled'],
@@ -37,6 +41,15 @@ interface RentalConflictPayload {
   }>;
 }
 
+interface RentalVersionConflictPayload {
+  code: 'RENTAL_VERSION_CONFLICT';
+  message: string;
+  server_version: string;
+  conflicting_fields: string[];
+  last_actor: string | null;
+  last_updated_at: string;
+}
+
 @Injectable()
 export class RentalsService {
   constructor(
@@ -46,13 +59,18 @@ export class RentalsService {
   ) {}
 
   async listOrders(organizationId: string, status?: RentalLifecycleStatus) {
-    return this.prisma.rentalOrder.findMany({
+    const orders = await this.prisma.rentalOrder.findMany({
       where: {
         organizationId,
         ...(status ? { status } : {})
       },
       orderBy: { startsAt: 'asc' }
     });
+
+    return orders.map((order) => ({
+      ...order,
+      version: order.updatedAt.toISOString()
+    }));
   }
 
   async createOrder(dto: CreateRentalOrderDto, actor?: AccessClaims) {
@@ -138,9 +156,10 @@ export class RentalsService {
   async updateStatus(
     rentalOrderId: string,
     organizationId: string,
-    nextStatus: RentalLifecycleStatus,
+    dto: UpdateRentalStatusDto,
     actor?: AccessClaims
   ) {
+    const nextStatus = dto.status;
     return this.prisma.$transaction(async (tx) => {
       const order = await tx.rentalOrder.findFirst({
         where: {
@@ -152,7 +171,44 @@ export class RentalsService {
         throw new NotFoundException('Rental order not found');
       }
 
+      const serverVersion = order.updatedAt.toISOString();
+      if (dto.baseVersion && dto.baseVersion !== serverVersion) {
+        const lastActor = await tx.auditLog.findFirst({
+          where: {
+            organizationId,
+            entityType: 'RentalOrder',
+            entityId: order.id,
+            action: 'rental.status.updated'
+          },
+          orderBy: { createdAt: 'desc' },
+          select: { actorUserId: true }
+        });
+        const conflictPayload: RentalVersionConflictPayload = {
+          code: 'RENTAL_VERSION_CONFLICT',
+          message: 'Rental order was updated by another actor.',
+          server_version: serverVersion,
+          conflicting_fields: ['status'],
+          last_actor: lastActor?.actorUserId ?? null,
+          last_updated_at: serverVersion
+        };
+        await this.upsertSyncDiagnostic(tx, rentalOrderId, organizationId, dto, {
+          syncState: 'conflict',
+          serverVersion,
+          conflictingFields: ['status'],
+          lastActorUserId: lastActor?.actorUserId ?? null,
+          lastUpdatedAt: order.updatedAt,
+          lastError: conflictPayload.message
+        });
+        throw new ConflictException(conflictPayload);
+      }
+
       if (order.status === nextStatus) {
+        await this.upsertSyncDiagnostic(tx, rentalOrderId, organizationId, dto, {
+          syncState: 'synced',
+          serverVersion,
+          lastUpdatedAt: order.updatedAt,
+          lastActorUserId: actor?.sub ?? null
+        });
         return order;
       }
 
@@ -213,7 +269,28 @@ export class RentalsService {
         });
       }
 
-      return updatedOrder;
+      await this.upsertSyncDiagnostic(tx, rentalOrderId, organizationId, dto, {
+        syncState: 'synced',
+        serverVersion: updatedOrder.updatedAt.toISOString(),
+        lastUpdatedAt: updatedOrder.updatedAt,
+        lastActorUserId: actor?.sub ?? null
+      });
+
+      return {
+        ...updatedOrder,
+        version: updatedOrder.updatedAt.toISOString()
+      };
+    });
+  }
+
+  async listSyncDiagnostics(organizationId: string, deviceSessionId: string, limit?: number) {
+    return this.prisma.rentalSyncDiagnostic.findMany({
+      where: {
+        organizationId,
+        deviceSessionId
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+      take: Math.min(Math.max(limit ?? 20, 1), 100)
     });
   }
 
@@ -332,5 +409,53 @@ export class RentalsService {
     };
 
     throw new ConflictException(payload);
+  }
+
+  private async upsertSyncDiagnostic(
+    tx: Prisma.TransactionClient,
+    rentalOrderId: string,
+    organizationId: string,
+    dto: UpdateRentalStatusDto,
+    options: {
+      syncState: 'synced' | 'conflict' | 'manual_review' | 'failed';
+      serverVersion?: string;
+      conflictingFields?: string[];
+      lastActorUserId?: string | null;
+      lastUpdatedAt?: Date;
+      lastError?: string;
+    }
+  ) {
+    if (!dto.operationId || !dto.deviceSessionId || !dto.payloadHash) {
+      return;
+    }
+
+    await tx.rentalSyncDiagnostic.upsert({
+      where: { operationId: dto.operationId },
+      create: {
+        organizationId,
+        rentalOrderId,
+        deviceSessionId: dto.deviceSessionId,
+        operationId: dto.operationId,
+        operationType: 'status',
+        payloadHash: dto.payloadHash,
+        baseVersion: dto.baseVersion ?? null,
+        serverVersion: options.serverVersion ?? null,
+        syncState: options.syncState,
+        conflictingFields: options.conflictingFields ?? [],
+        lastActorUserId: options.lastActorUserId ?? null,
+        lastUpdatedAt: options.lastUpdatedAt ?? null,
+        retryCount: dto.retryCount ?? 0,
+        lastError: options.lastError ?? null
+      },
+      update: {
+        serverVersion: options.serverVersion ?? null,
+        syncState: options.syncState,
+        conflictingFields: options.conflictingFields ?? [],
+        lastActorUserId: options.lastActorUserId ?? null,
+        lastUpdatedAt: options.lastUpdatedAt ?? null,
+        retryCount: dto.retryCount ?? 0,
+        lastError: options.lastError ?? null
+      }
+    });
   }
 }

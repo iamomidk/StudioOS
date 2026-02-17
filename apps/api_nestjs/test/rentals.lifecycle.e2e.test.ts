@@ -30,6 +30,16 @@ interface RentalConflictResponse {
   };
 }
 
+interface RentalVersionConflictResponse {
+  error: {
+    code: 'RENTAL_VERSION_CONFLICT';
+    server_version: string;
+    conflicting_fields: string[];
+    last_actor: string | null;
+    last_updated_at: string;
+  };
+}
+
 void test('rental lifecycle rejects invalid transitions and enforces reservation conflicts', async () => {
   const previousEnv = { ...process.env };
   Object.assign(process.env, requiredEnv);
@@ -127,10 +137,34 @@ void test('rental lifecycle rejects invalid transitions and enforces reservation
     .send({ status: 'returned' });
   assert.equal(invalidTransition.status, 400);
 
+  const staleVersionConflict = await request(httpServer)
+    .patch(`/rentals/${rentalOrderId}/status?organizationId=${encodeURIComponent(organization.id)}`)
+    .set('Authorization', `Bearer ${accessToken}`)
+    .send({
+      status: 'picked_up',
+      baseVersion: '2020-01-01T00:00:00.000Z',
+      operationId: '43dc9ddd-6894-4f5e-89e0-b80ea810f898',
+      deviceSessionId: 'device-test-1',
+      payloadHash: 'status-hash',
+      retryCount: 2
+    });
+  assert.equal(staleVersionConflict.status, 409);
+  const staleBody = staleVersionConflict.body as RentalVersionConflictResponse;
+  assert.equal(staleBody.error.code, 'RENTAL_VERSION_CONFLICT');
+  assert.equal(staleBody.error.conflicting_fields[0], 'status');
+  assert.ok(staleBody.error.server_version.length > 0);
+
   const pickUp = await request(httpServer)
     .patch(`/rentals/${rentalOrderId}/status?organizationId=${encodeURIComponent(organization.id)}`)
     .set('Authorization', `Bearer ${accessToken}`)
-    .send({ status: 'picked_up' });
+    .send({
+      status: 'picked_up',
+      baseVersion: staleBody.error.server_version,
+      operationId: '9f9dbffa-f4de-4064-a6ba-ea01549f2569',
+      deviceSessionId: 'device-test-1',
+      payloadHash: 'status-hash-2',
+      retryCount: 0
+    });
   assert.equal(pickUp.status, 200);
   assert.equal((pickUp.body as { status: string }).status, 'picked_up');
 
@@ -140,6 +174,17 @@ void test('rental lifecycle rejects invalid transitions and enforces reservation
     .send({ status: 'returned' });
   assert.equal(returned.status, 200);
   assert.equal((returned.body as { status: string }).status, 'returned');
+
+  const diagnostics = await request(httpServer)
+    .get(
+      `/rentals/sync-diagnostics?organizationId=${encodeURIComponent(organization.id)}&deviceSessionId=device-test-1`
+    )
+    .set('Authorization', `Bearer ${accessToken}`);
+  assert.equal(diagnostics.status, 200);
+  assert.ok(Array.isArray(diagnostics.body));
+  assert.ok((diagnostics.body as Array<{ operationId: string }>).some((item) => item.operationId));
+
+  await prisma.rentalSyncDiagnostic.deleteMany({ where: { organizationId: organization.id } });
 
   await prisma.auditLog.deleteMany({ where: { organizationId: organization.id } });
   await prisma.rentalOrder.deleteMany({ where: { organizationId: organization.id } });

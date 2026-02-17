@@ -140,12 +140,24 @@ class StudioOsApiClient {
     required String rentalOrderId,
     required String organizationId,
     required String status,
+    String? baseVersion,
+    String? operationId,
+    String? deviceSessionId,
+    String? payloadHash,
+    int? retryCount,
   }) {
     return _request(
       'PATCH',
       '/rentals/\${Uri.encodeComponent(rentalOrderId)}/status',
       query: {'organizationId': organizationId},
-      body: {'status': status},
+      body: {
+        'status': status,
+        if (baseVersion != null && baseVersion.isNotEmpty) 'baseVersion': baseVersion,
+        if (operationId != null && operationId.isNotEmpty) 'operationId': operationId,
+        if (deviceSessionId != null && deviceSessionId.isNotEmpty) 'deviceSessionId': deviceSessionId,
+        if (payloadHash != null && payloadHash.isNotEmpty) 'payloadHash': payloadHash,
+        if (retryCount != null) 'retryCount': retryCount,
+      },
     );
   }
 
@@ -360,7 +372,7 @@ async function main() {
 
   const formatResult = spawnSync('dart', ['format', outputPath], {
     stdio: 'pipe',
-    encoding: 'utf8',
+    encoding: 'utf8'
   });
   if (formatResult.status !== 0) {
     throw new Error(formatResult.stderr?.trim() || 'Failed to format generated Dart client');
@@ -370,6 +382,8 @@ async function main() {
 }
 
 main().catch((error) => {
-  process.stderr.write(`Dart client generation failed: ${error instanceof Error ? error.message : String(error)}\n`);
+  process.stderr.write(
+    `Dart client generation failed: ${error instanceof Error ? error.message : String(error)}\n`
+  );
   process.exitCode = 1;
 });

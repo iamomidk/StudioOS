@@ -5,6 +5,7 @@ class RentalOrderView {
     required this.status,
     required this.startsAt,
     required this.endsAt,
+    required this.version,
     this.assignedUserId,
   });
 
@@ -13,6 +14,7 @@ class RentalOrderView {
   final String status;
   final DateTime startsAt;
   final DateTime endsAt;
+  final String version;
   final String? assignedUserId;
 
   static RentalOrderView fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class RentalOrderView {
       endsAt:
           DateTime.tryParse(json['endsAt']?.toString() ?? '')?.toUtc() ??
           DateTime.now().toUtc(),
+      version: json['version']?.toString() ?? '',
       assignedUserId: json['assignedUserId']?.toString(),
     );
   }
@@ -63,6 +66,8 @@ class RentalsState {
     required this.rentals,
     required this.evidenceByRental,
     required this.pendingActionCount,
+    required this.manualReviewCount,
+    required this.pendingConflicts,
     this.errorMessage,
     this.infoMessage,
   });
@@ -72,6 +77,8 @@ class RentalsState {
   final List<RentalOrderView> rentals;
   final Map<String, List<RentalEvidenceView>> evidenceByRental;
   final int pendingActionCount;
+  final int manualReviewCount;
+  final List<Map<String, dynamic>> pendingConflicts;
   final String? errorMessage;
   final String? infoMessage;
 
@@ -81,6 +88,8 @@ class RentalsState {
     List<RentalOrderView>? rentals,
     Map<String, List<RentalEvidenceView>>? evidenceByRental,
     int? pendingActionCount,
+    int? manualReviewCount,
+    List<Map<String, dynamic>>? pendingConflicts,
     String? errorMessage,
     String? infoMessage,
     bool clearError = false,
@@ -92,6 +101,8 @@ class RentalsState {
       rentals: rentals ?? this.rentals,
       evidenceByRental: evidenceByRental ?? this.evidenceByRental,
       pendingActionCount: pendingActionCount ?? this.pendingActionCount,
+      manualReviewCount: manualReviewCount ?? this.manualReviewCount,
+      pendingConflicts: pendingConflicts ?? this.pendingConflicts,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       infoMessage: clearInfo ? null : (infoMessage ?? this.infoMessage),
     );
@@ -103,5 +114,7 @@ class RentalsState {
     rentals: <RentalOrderView>[],
     evidenceByRental: <String, List<RentalEvidenceView>>{},
     pendingActionCount: 0,
+    manualReviewCount: 0,
+    pendingConflicts: <Map<String, dynamic>>[],
   );
 }

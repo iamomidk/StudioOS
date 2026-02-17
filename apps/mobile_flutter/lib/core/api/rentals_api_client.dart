@@ -8,6 +8,11 @@ abstract class RentalsApiClientPort {
     required String rentalOrderId,
     required String organizationId,
     required String status,
+    String? baseVersion,
+    String? operationId,
+    String? deviceSessionId,
+    String? payloadHash,
+    int? retryCount,
   });
   Future<Map<String, dynamic>?> createRentalEvidence({
     required String rentalOrderId,
@@ -47,11 +52,21 @@ class RentalsApiClient implements RentalsApiClientPort {
     required String rentalOrderId,
     required String organizationId,
     required String status,
+    String? baseVersion,
+    String? operationId,
+    String? deviceSessionId,
+    String? payloadHash,
+    int? retryCount,
   }) {
     return _client.updateRentalStatus(
       rentalOrderId: rentalOrderId,
       organizationId: organizationId,
       status: status,
+      baseVersion: baseVersion,
+      operationId: operationId,
+      deviceSessionId: deviceSessionId,
+      payloadHash: payloadHash,
+      retryCount: retryCount,
     );
   }
 
