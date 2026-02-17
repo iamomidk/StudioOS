@@ -50,7 +50,14 @@ const envSchema = z.object({
     .default(
       'org_created,team_invited,first_lead_created,first_quote_sent,first_booking_created,first_rental_reserved,first_invoice_issued'
     ),
-  ACTIVATION_REQUIRED_STEPS: z.string().default('first_booking_created,first_invoice_issued')
+  ACTIVATION_REQUIRED_STEPS: z.string().default('first_booking_created,first_invoice_issued'),
+  FEATURE_SUPPORT_ADMIN_ACTIONS_ENABLED: booleanFromEnv.default(false),
+  SUPPORT_ALERT_WEBHOOK_URL: z.string().default(''),
+  SUPPORT_ALLOWED_ATTACHMENT_TYPES: z
+    .string()
+    .default('image/jpeg,image/png,image/webp,text/plain,application/pdf'),
+  SUPPORT_MAX_ATTACHMENT_BYTES: z.coerce.number().int().min(1).default(5242880),
+  SUPPORT_MAX_SUBMISSIONS_PER_MINUTE: z.coerce.number().int().min(1).default(5)
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

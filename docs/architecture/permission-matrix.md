@@ -17,4 +17,5 @@ Roles supported in API authorization:
 | `rental.manage` | allow | allow | deny | deny | allow | deny |
 | `pricing.experiments.manage` | allow | allow | deny | deny | deny | deny |
 | `analytics.onboarding.view` | allow | allow | deny | deny | deny | deny |
+| `support.console.manage` | allow | allow | deny | deny | deny | deny |
 | `client.portal` | deny | deny | deny | deny | deny | allow |

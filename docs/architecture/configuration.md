@@ -33,6 +33,11 @@ This document lists baseline environment variables for each app and service in S
 | `PRICING_EXPERIMENTS_GLOBAL_KILL_SWITCH` | No | `false` | Global emergency kill switch that disables all pricing experiments immediately. |
 | `ONBOARDING_STEPS` | No | `org_created,team_invited,first_lead_created,first_quote_sent,first_booking_created,first_rental_reserved,first_invoice_issued` | Ordered onboarding funnel steps used for RC-07 activation analytics. |
 | `ACTIVATION_REQUIRED_STEPS` | No | `first_booking_created,first_invoice_issued` | Comma-separated step list that defines activation achievement without code changes. |
+| `FEATURE_SUPPORT_ADMIN_ACTIONS_ENABLED` | No | `false` | Enables support safe admin actions (`resend-notification`, `retry-webhook`, `requeue-job`). |
+| `SUPPORT_ALERT_WEBHOOK_URL` | No | `` | Optional webhook target for P0/P1 support ticket notifications. |
+| `SUPPORT_ALLOWED_ATTACHMENT_TYPES` | No | `image/jpeg,image/png,image/webp,text/plain,application/pdf` | Attachment MIME allowlist enforced on support submissions. |
+| `SUPPORT_MAX_ATTACHMENT_BYTES` | No | `5242880` | Maximum allowed size for one support attachment in bytes. |
+| `SUPPORT_MAX_SUBMISSIONS_PER_MINUTE` | No | `5` | Per-user/org support ticket submission rate limit over one minute. |
 
 ## apps/web_nextjs
 

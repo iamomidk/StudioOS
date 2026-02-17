@@ -115,4 +115,26 @@ export class AppConfigService {
       .map((value) => value.trim())
       .filter((value) => value.length > 0);
   }
+
+  get featureSupportAdminActionsEnabled(): boolean {
+    return this.env.FEATURE_SUPPORT_ADMIN_ACTIONS_ENABLED;
+  }
+
+  get supportAlertWebhookUrl(): string {
+    return this.env.SUPPORT_ALERT_WEBHOOK_URL;
+  }
+
+  get supportAllowedAttachmentTypes(): string[] {
+    return this.env.SUPPORT_ALLOWED_ATTACHMENT_TYPES.split(',')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+  }
+
+  get supportMaxAttachmentBytes(): number {
+    return this.env.SUPPORT_MAX_ATTACHMENT_BYTES;
+  }
+
+  get supportMaxSubmissionsPerMinute(): number {
+    return this.env.SUPPORT_MAX_SUBMISSIONS_PER_MINUTE;
+  }
 }

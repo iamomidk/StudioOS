@@ -11,6 +11,7 @@ import '../offline/offline_action_queue_repository.dart';
 import '../storage/token_storage.dart';
 import 'auth_api_client.dart';
 import 'rentals_api_client.dart';
+import 'support_api_client.dart';
 
 final tokenStorageProvider = Provider<TokenStorage>((_) {
   return TokenStorage();
@@ -33,6 +34,13 @@ final authApiClientProvider = Provider<AuthApiClientPort>((ref) {
 
 final rentalsApiClientProvider = Provider<RentalsApiClientPort>((ref) {
   return RentalsApiClient(ref.watch(apiClientProvider));
+});
+
+final supportApiClientProvider = Provider<SupportApiClientPort>((ref) {
+  return SupportApiClient(
+    baseUrl: apiBaseUrl,
+    tokenStorage: ref.watch(tokenStorageProvider),
+  );
 });
 
 final profileCacheRepositoryProvider = Provider<ProfileCacheRepositoryPort>((

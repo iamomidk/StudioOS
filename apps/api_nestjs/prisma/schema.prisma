@@ -98,14 +98,29 @@ enum AllocationTargetType {
   cohort
 }
 
+enum SupportTicketStatus {
+  open
+  triaged
+  in_progress
+  resolved
+  closed
+}
+
+enum SupportTicketSeverity {
+  p0
+  p1
+  p2
+  p3
+}
+
 model User {
-  id             String         @id @default(cuid())
-  email          String         @unique
+  id             String              @id @default(cuid())
+  email          String              @unique
   firstName      String
   lastName       String
-  passwordHash   String         @default("")
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  passwordHash   String              @default("")
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
   memberships    Membership[]
   projects       Project[]
   rentalOrders   RentalOrder[]
@@ -113,45 +128,48 @@ model User {
   auditLogs      AuditLog[]
   refreshTokens  RefreshToken[]
   rentalEvidence RentalEvidence[]
+  supportTickets SupportTicket[]
+  supportNotes   SupportTicketNote[]
 }
 
 model RefreshToken {
-  id          String    @id @default(cuid())
-  userId      String
-  tokenHash   String    @unique
-  jti         String    @unique
-  expiresAt   DateTime
-  revokedAt   DateTime?
-  createdAt   DateTime  @default(now())
-  replacedBy  String?
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  jti        String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  replacedBy String?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, expiresAt])
 }
 
 model Organization {
-  id             String          @id @default(cuid())
-  name           String
-  pilotOrg       Boolean         @default(false)
-  pilotCohortId  String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  memberships    Membership[]
-  clients        Client[]
-  leads          Lead[]
-  quotes         Quote[]
-  bookings       Booking[]
-  projects       Project[]
-  assets         Asset[]
-  inventoryItems InventoryItem[]
-  rentalOrders   RentalOrder[]
-  invoices       Invoice[]
-  payments       Payment[]
+  id                   String                @id @default(cuid())
+  name                 String
+  pilotOrg             Boolean               @default(false)
+  pilotCohortId        String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  memberships          Membership[]
+  clients              Client[]
+  leads                Lead[]
+  quotes               Quote[]
+  bookings             Booking[]
+  projects             Project[]
+  assets               Asset[]
+  inventoryItems       InventoryItem[]
+  rentalOrders         RentalOrder[]
+  invoices             Invoice[]
+  payments             Payment[]
   paymentWebhookEvents PaymentWebhookEvent[]
-  auditLogs      AuditLog[]
-  rentalEvidence RentalEvidence[]
-  analyticsEvents AnalyticsEvent[]
-  pricingExposureLogs PricingExposureLog[]
+  auditLogs            AuditLog[]
+  rentalEvidence       RentalEvidence[]
+  analyticsEvents      AnalyticsEvent[]
+  pricingExposureLogs  PricingExposureLog[]
+  supportTickets       SupportTicket[]
 }
 
 model Membership {
@@ -243,7 +261,7 @@ model Quote {
 }
 
 model QuoteLineItem {
-  id             String @id @default(cuid())
+  id             String   @id @default(cuid())
   quoteId        String
   description    String
   quantity       Int
@@ -251,30 +269,30 @@ model QuoteLineItem {
   lineTotalCents Int
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  quote          Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quote          Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 
   @@index([quoteId])
 }
 
 model Project {
-  id             String        @id @default(cuid())
-  organizationId String
-  bookingId      String?
-  clientId       String
-  ownerUserId    String?
-  name           String
-  status         ProjectStatus @default(preprod)
+  id                  String              @id @default(cuid())
+  organizationId      String
+  bookingId           String?
+  clientId            String
+  ownerUserId         String?
+  name                String
+  status              ProjectStatus       @default(preprod)
   clientApprovalState ClientApprovalState @default(pending)
-  revisionCount  Int           @default(0)
+  revisionCount       Int                 @default(0)
   lastRevisionComment String?
-  clientApprovedAt DateTime?
-  dueAt          DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  booking        Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  client         Client        @relation(fields: [clientId], references: [id], onDelete: Restrict)
-  owner          User?         @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
+  clientApprovedAt    DateTime?
+  dueAt               DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  organization        Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  booking             Booking?            @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  client              Client              @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  owner               User?               @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, status])
 }
@@ -330,7 +348,7 @@ model RentalOrder {
 }
 
 model RentalEvidence {
-  id             String      @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
   rentalOrderId  String
   actorUserId    String?
@@ -339,29 +357,29 @@ model RentalEvidence {
   occurredAt     DateTime
   latitude       Float?
   longitude      Float?
-  createdAt      DateTime    @default(now())
+  createdAt      DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  rentalOrder    RentalOrder @relation(fields: [rentalOrderId], references: [id], onDelete: Cascade)
-  actor          User?       @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  rentalOrder    RentalOrder  @relation(fields: [rentalOrderId], references: [id], onDelete: Cascade)
+  actor          User?        @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, rentalOrderId, occurredAt])
 }
 
 model Invoice {
-  id             String        @id @default(cuid())
+  id             String                @id @default(cuid())
   organizationId String
   clientId       String
   invoiceNumber  String
-  status         InvoiceStatus @default(draft)
+  status         InvoiceStatus         @default(draft)
   subtotalCents  Int
   taxCents       Int
   totalCents     Int
   issuedAt       DateTime?
   dueAt          DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  client         Client        @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client         Client                @relation(fields: [clientId], references: [id], onDelete: Restrict)
   payments       Payment[]
   webhookEvents  PaymentWebhookEvent[]
 
@@ -370,38 +388,38 @@ model Invoice {
 }
 
 model Payment {
-  id             String        @id @default(cuid())
+  id             String                @id @default(cuid())
   organizationId String
   invoiceId      String
   userId         String?
   provider       String
   providerRef    String?
   amountCents    Int
-  currency       String        @default("USD")
-  status         PaymentStatus @default(pending)
+  currency       String                @default("USD")
+  status         PaymentStatus         @default(pending)
   paidAt         DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  invoice        Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoice        Invoice               @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  user           User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
   webhookEvents  PaymentWebhookEvent[]
 
   @@index([organizationId, status])
 }
 
 model PaymentWebhookEvent {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   provider       String
   eventId        String
   organizationId String
   invoiceId      String
   paymentId      String?
   payload        Json
-  processedAt    DateTime @default(now())
+  processedAt    DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  invoice        Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  payment        Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  invoice        Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  payment        Payment?     @relation(fields: [paymentId], references: [id], onDelete: SetNull)
 
   @@unique([provider, eventId])
   @@index([organizationId, invoiceId, processedAt])
@@ -424,20 +442,20 @@ model AuditLog {
 }
 
 model AnalyticsEvent {
-  id             String       @id @default(cuid())
-  organizationId String
-  eventName      String
-  actorRole      String
-  source         String
-  entityType     String?
-  entityId       String?
-  payload        Json?
-  idempotencyKey String?      @unique
-  occurredAt     DateTime
-  pilotOrg       Boolean      @default(false)
-  pilotCohortId  String?
-  createdAt      DateTime     @default(now())
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id              String                       @id @default(cuid())
+  organizationId  String
+  eventName       String
+  actorRole       String
+  source          String
+  entityType      String?
+  entityId        String?
+  payload         Json?
+  idempotencyKey  String?                      @unique
+  occurredAt      DateTime
+  pilotOrg        Boolean                      @default(false)
+  pilotCohortId   String?
+  createdAt       DateTime                     @default(now())
+  organization    Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   conversionLinks PricingConversionEventLink[]
 
   @@index([organizationId, eventName, occurredAt])
@@ -464,16 +482,16 @@ model PricingExperiment {
 }
 
 model PricingVariant {
-  id                String            @id @default(cuid())
+  id                String               @id @default(cuid())
   experimentId      String
   key               String
   name              String
-  weight            Int               @default(1)
+  weight            Int                  @default(1)
   pricingMultiplier Float?
   config            Json?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  experiment        PricingExperiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  experiment        PricingExperiment    @relation(fields: [experimentId], references: [id], onDelete: Cascade)
   exposureLogs      PricingExposureLog[]
 
   @@unique([experimentId, key])
@@ -481,33 +499,33 @@ model PricingVariant {
 }
 
 model PricingAllocationRule {
-  id            String              @id @default(cuid())
-  experimentId  String
-  targetType    AllocationTargetType
-  targetValue   String?
-  createdAt     DateTime            @default(now())
-  experiment    PricingExperiment   @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  id           String               @id @default(cuid())
+  experimentId String
+  targetType   AllocationTargetType
+  targetValue  String?
+  createdAt    DateTime             @default(now())
+  experiment   PricingExperiment    @relation(fields: [experimentId], references: [id], onDelete: Cascade)
 
   @@index([experimentId, targetType, targetValue])
 }
 
 model PricingExposureLog {
-  id               String                     @id @default(cuid())
-  experimentId     String
-  variantId        String
-  organizationId   String
-  subjectType      String
-  subjectKey       String
-  source           String
-  entityType       String?
-  entityId         String?
-  idempotencyKey   String?                    @unique
-  occurredAt       DateTime                   @default(now())
-  createdAt        DateTime                   @default(now())
-  experiment       PricingExperiment          @relation(fields: [experimentId], references: [id], onDelete: Cascade)
-  variant          PricingVariant             @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  organization     Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  conversionLinks  PricingConversionEventLink[]
+  id              String                       @id @default(cuid())
+  experimentId    String
+  variantId       String
+  organizationId  String
+  subjectType     String
+  subjectKey      String
+  source          String
+  entityType      String?
+  entityId        String?
+  idempotencyKey  String?                      @unique
+  occurredAt      DateTime                     @default(now())
+  createdAt       DateTime                     @default(now())
+  experiment      PricingExperiment            @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  variant         PricingVariant               @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  organization    Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversionLinks PricingConversionEventLink[]
 
   @@index([experimentId, variantId, occurredAt])
   @@index([organizationId, occurredAt])
@@ -516,17 +534,54 @@ model PricingExposureLog {
 }
 
 model PricingConversionEventLink {
-  id             String             @id @default(cuid())
-  exposureLogId  String
+  id               String             @id @default(cuid())
+  exposureLogId    String
   analyticsEventId String
-  eventName      String
-  entityType     String?
-  entityId       String?
-  occurredAt     DateTime
-  createdAt      DateTime           @default(now())
-  exposureLog    PricingExposureLog @relation(fields: [exposureLogId], references: [id], onDelete: Cascade)
-  analyticsEvent AnalyticsEvent     @relation(fields: [analyticsEventId], references: [id], onDelete: Cascade)
+  eventName        String
+  entityType       String?
+  entityId         String?
+  occurredAt       DateTime
+  createdAt        DateTime           @default(now())
+  exposureLog      PricingExposureLog @relation(fields: [exposureLogId], references: [id], onDelete: Cascade)
+  analyticsEvent   AnalyticsEvent     @relation(fields: [analyticsEventId], references: [id], onDelete: Cascade)
 
   @@unique([exposureLogId, analyticsEventId])
   @@index([eventName, occurredAt])
+}
+
+model SupportTicket {
+  id             String                @id @default(cuid())
+  organizationId String
+  reporterUserId String?
+  title          String
+  description    String
+  status         SupportTicketStatus   @default(open)
+  severity       SupportTicketSeverity @default(p2)
+  routePath      String?
+  screenName     String?
+  appVersion     String?
+  correlationId  String?
+  requestId      String?
+  attachments    Json?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  resolvedAt     DateTime?
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reporter       User?                 @relation(fields: [reporterUserId], references: [id], onDelete: SetNull)
+  notes          SupportTicketNote[]
+
+  @@index([organizationId, status, severity, createdAt])
+  @@index([reporterUserId, createdAt])
+}
+
+model SupportTicketNote {
+  id           String        @id @default(cuid())
+  ticketId     String
+  authorUserId String?
+  note         String
+  createdAt    DateTime      @default(now())
+  ticket       SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author       User?         @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, createdAt])
 }

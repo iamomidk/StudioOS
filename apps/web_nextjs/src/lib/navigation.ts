@@ -9,5 +9,6 @@ export const DASHBOARD_NAV_ITEMS: NavItem[] = [
   { label: 'Projects', href: '/dashboard/projects' },
   { label: 'Inventory', href: '/dashboard/inventory' },
   { label: 'Rentals', href: '/dashboard/rentals' },
-  { label: 'Billing', href: '/dashboard/billing' }
+  { label: 'Billing', href: '/dashboard/billing' },
+  { label: 'Support', href: '/dashboard/support' }
 ];
