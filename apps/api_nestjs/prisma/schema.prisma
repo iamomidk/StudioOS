@@ -219,6 +219,36 @@ enum RiskLevel {
   high
 }
 
+enum ContractStatus {
+  draft
+  legal_review
+  business_approval
+  sent
+  signed
+  active
+  declined
+  expired
+}
+
+enum ContractSignatureStatus {
+  pending
+  signed
+  declined
+  expired
+}
+
+enum ContractApprovalFlowStatus {
+  pending
+  approved
+  rejected
+}
+
+enum ContractApprovalStepStatus {
+  pending
+  approved
+  rejected
+}
+
 enum PartnerCredentialStatus {
   active
   suspended
@@ -261,6 +291,7 @@ model User {
   billingSeatChangeLogs           BillingSubscriptionSeatChangeLog[]
   billingAdjustmentsRequested     BillingAdjustmentRequest[] @relation("BillingAdjustmentRequestedBy")
   billingAdjustmentsApproved      BillingAdjustmentRequest[] @relation("BillingAdjustmentApprovedBy")
+  contractApprovalStepsActed      ContractApprovalStep[]
 }
 
 model RefreshToken {
@@ -331,6 +362,8 @@ model Organization {
   billingInvoiceLines         BillingInvoiceLine[]
   billingSeatChangeLogs       BillingSubscriptionSeatChangeLog[]
   billingAdjustments          BillingAdjustmentRequest[]
+  contractClauseSets          ContractClauseSet[]
+  contracts                   Contract[]
 }
 
 model Membership {
@@ -361,6 +394,7 @@ model Client {
   projects       Project[]
   invoices       Invoice[]
   rentalOrders   RentalOrder[]
+  contracts      Contract[]
   billingSubscriptions BillingSubscription[]
 
   @@index([organizationId])
@@ -1354,4 +1388,129 @@ model SupportTicketSla {
 
   @@index([state, lastEvaluatedAt])
   @@index([clockStartedAt, resolutionDueAt])
+}
+
+model ContractClauseSet {
+  id                 String            @id @default(cuid())
+  organizationId     String
+  name               String
+  clauses            Json
+  requiredClauseKeys String[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  organization       Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  versions           ContractVersion[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId, createdAt])
+}
+
+model Contract {
+  id                   String                  @id @default(cuid())
+  organizationId       String
+  clientId             String?
+  contractType         String
+  title                String
+  status               ContractStatus          @default(draft)
+  signatureStatus      ContractSignatureStatus @default(pending)
+  contractValueCents   Int
+  riskTier             String                  @default("standard")
+  currentVersionId     String?
+  approvalFlowId       String?                 @unique
+  signatureProviderRef String?
+  signatureLastEventId String?
+  signatureLastEventAt DateTime?
+  sentAt               DateTime?
+  signedAt             DateTime?
+  activeAt             DateTime?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  organization         Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client               Client?                 @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  currentVersion       ContractVersion?        @relation("ContractCurrentVersion", fields: [currentVersionId], references: [id], onDelete: SetNull)
+  versions             ContractVersion[]       @relation("ContractVersions")
+  amendments           ContractAmendment[]
+  approvalFlow         ContractApprovalFlow?
+  renewalSchedule      ContractRenewalSchedule?
+
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, contractType, createdAt])
+}
+
+model ContractVersion {
+  id                      String              @id @default(cuid())
+  contractId              String
+  versionNumber           Int
+  clauseSetId             String?
+  clauseKeys              String[]
+  missingMandatoryClauses String[]
+  snapshot                Json
+  createdAt               DateTime            @default(now())
+  contract                Contract            @relation("ContractVersions", fields: [contractId], references: [id], onDelete: Cascade)
+  clauseSet               ContractClauseSet?  @relation(fields: [clauseSetId], references: [id], onDelete: SetNull)
+  currentForContract      Contract[]          @relation("ContractCurrentVersion")
+  fromAmendments          ContractAmendment[] @relation("ContractAmendmentFromVersion")
+  toAmendments            ContractAmendment[] @relation("ContractAmendmentToVersion")
+
+  @@unique([contractId, versionNumber])
+  @@index([contractId, createdAt])
+}
+
+model ContractAmendment {
+  id            String          @id @default(cuid())
+  contractId    String
+  fromVersionId String
+  toVersionId   String
+  reason        String
+  status        ContractStatus  @default(draft)
+  createdAt     DateTime        @default(now())
+  contract      Contract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  fromVersion   ContractVersion @relation("ContractAmendmentFromVersion", fields: [fromVersionId], references: [id], onDelete: Restrict)
+  toVersion     ContractVersion @relation("ContractAmendmentToVersion", fields: [toVersionId], references: [id], onDelete: Restrict)
+
+  @@index([contractId, createdAt])
+}
+
+model ContractRenewalSchedule {
+  id                 String    @id @default(cuid())
+  contractId         String    @unique
+  renewAt            DateTime
+  reminderDaysBefore Int       @default(30)
+  autoDraftAmendment Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  contract           Contract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([renewAt])
+}
+
+model ContractApprovalFlow {
+  id             String                     @id @default(cuid())
+  contractId     String                     @unique
+  status         ContractApprovalFlowStatus @default(pending)
+  policySnapshot Json
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+  contract       Contract                   @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  steps          ContractApprovalStep[]
+
+  @@index([status, createdAt])
+}
+
+model ContractApprovalStep {
+  id             String                     @id @default(cuid())
+  approvalFlowId String
+  stepOrder      Int
+  approverRole   String
+  status         ContractApprovalStepStatus @default(pending)
+  actedByUserId  String?
+  actedAt        DateTime?
+  note           String?
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+  approvalFlow   ContractApprovalFlow       @relation(fields: [approvalFlowId], references: [id], onDelete: Cascade)
+  actedBy        User?                      @relation(fields: [actedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([approvalFlowId, stepOrder])
+  @@index([status, createdAt])
 }

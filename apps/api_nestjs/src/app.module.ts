@@ -13,6 +13,7 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { BillingModule } from './modules/billing/billing.module.js';
 import { BookingsModule } from './modules/bookings/bookings.module.js';
 import { CrmModule } from './modules/crm/crm.module.js';
+import { ContractsModule } from './modules/contracts/contracts.module.js';
 import { DisputesModule } from './modules/disputes/disputes.module.js';
 import { EnterpriseModule } from './modules/enterprise/enterprise.module.js';
 import { InventoryModule } from './modules/inventory/inventory.module.js';
@@ -42,6 +43,7 @@ import { WorkflowsModule } from './modules/workflows/workflows.module.js';
     OrgsModule,
     UsersModule,
     CrmModule,
+    ContractsModule,
     BookingsModule,
     ProjectsModule,
     InventoryModule,

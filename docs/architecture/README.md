@@ -31,3 +31,4 @@ Additional operations/release docs live outside the architecture package:
 - `../automation/workflow-builder.md`: No-code workflow triggers/conditions/actions, safety controls, versioning, and execution history APIs.
 - `../performance/load-testing-automation.md`: Performance target catalog, load profiles, regression gates, and bottleneck reporting artifacts.
 - `../billing/enterprise-billing-orchestration.md`: Enterprise plan/subscription/metering orchestration with proration, true-up, and auditable adjustments.
+- `../legal/contract-lifecycle-automation.md`: Contract templates, approval/signature lifecycle, amendments, and renewal schedule automation baseline.
