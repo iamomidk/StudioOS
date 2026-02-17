@@ -1,0 +1,12 @@
+{
+  "name": "@studioos/infra-terraform",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "build": "echo building infra/terraform",
+    "lint": "echo linting infra/terraform",
+    "format:check": "echo format check infra/terraform",
+    "typecheck": "echo typecheck infra/terraform",
+    "test": "echo testing infra/terraform"
+  }
+}

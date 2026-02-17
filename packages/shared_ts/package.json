@@ -1,0 +1,12 @@
+{
+  "name": "@studioos/packages-shared_ts",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src --ext .ts",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "echo testing packages/shared_ts"
+  }
+}

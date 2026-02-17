@@ -1,0 +1,7 @@
+node_modules
+.turbo
+pnpm-lock.yaml
+.flutter-plugins
+.flutter-plugins-dependencies
+.dart_tool
+.terraform
