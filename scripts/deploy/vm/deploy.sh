@@ -95,11 +95,20 @@ docker compose --env-file "${COMPOSE_ENV_FILE}" -f "${COMPOSE_FILE}" run --rm ap
 docker compose --env-file "${COMPOSE_ENV_FILE}" -f "${COMPOSE_FILE}" run --rm api pnpm --filter @studioos/apps-api_nestjs prisma:seed
 migration_status="PASS"
 
+SMOKE_ORG_ID_RUNTIME="$(
+  docker compose --env-file "${COMPOSE_ENV_FILE}" -f "${COMPOSE_FILE}" exec -T postgres \
+    psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Atc 'SELECT id FROM "Organization" ORDER BY "createdAt" DESC LIMIT 1;'
+)"
+if [[ -z "${SMOKE_ORG_ID_RUNTIME}" ]]; then
+  echo "Unable to resolve seeded organization ID for smoke checks." >&2
+  exit 1
+fi
+
 docker compose --env-file "${COMPOSE_ENV_FILE}" -f "${COMPOSE_FILE}" up -d api web proxy
 
 docker compose --env-file "${COMPOSE_ENV_FILE}" -f "${COMPOSE_FILE}" ps
 
-"${ROOT_DIR}/scripts/deploy/vm/smoke.sh"
+SMOKE_ORG_ID_OVERRIDE="${SMOKE_ORG_ID_RUNTIME}" "${ROOT_DIR}/scripts/deploy/vm/smoke.sh"
 smoke_status="PASS"
 
 if [[ -f "${CURRENT_SHA_FILE}" ]]; then
