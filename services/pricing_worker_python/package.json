@@ -1,0 +1,12 @@
+{
+  "name": "@studioos/services-pricing_worker_python",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "build": "python3 -m compileall app",
+    "lint": "../../.venv/bin/ruff check app",
+    "format:check": "../../.venv/bin/black --check app",
+    "typecheck": "../../.venv/bin/mypy app",
+    "test": "python3 -m unittest discover -s tests -p \"test_*.py\""
+  }
+}
