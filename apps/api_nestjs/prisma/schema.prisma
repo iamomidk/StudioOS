@@ -113,6 +113,13 @@ enum SupportTicketSeverity {
   p3
 }
 
+enum SlaBreachState {
+  healthy
+  at_risk
+  breached
+  recovered
+}
+
 model User {
   id             String              @id @default(cuid())
   email          String              @unique
@@ -569,6 +576,7 @@ model SupportTicket {
   organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   reporter       User?                 @relation(fields: [reporterUserId], references: [id], onDelete: SetNull)
   notes          SupportTicketNote[]
+  sla            SupportTicketSla?
 
   @@index([organizationId, status, severity, createdAt])
   @@index([reporterUserId, createdAt])
@@ -584,4 +592,30 @@ model SupportTicketNote {
   author       User?         @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
 
   @@index([ticketId, createdAt])
+}
+
+model SupportTicketSla {
+  id                         String         @id @default(cuid())
+  ticketId                   String         @unique
+  policyVersion              String
+  businessHoursOnly          Boolean        @default(false)
+  firstResponseTargetMinutes Int
+  resolutionTargetMinutes    Int
+  clockStartedAt             DateTime
+  firstResponseDueAt         DateTime
+  resolutionDueAt            DateTime
+  firstResponseAt            DateTime?
+  resolvedAt                 DateTime?
+  firstResponseBreachedAt    DateTime?
+  resolutionBreachedAt       DateTime?
+  state                      SlaBreachState @default(healthy)
+  pausedAt                   DateTime?
+  totalPausedSeconds         Int            @default(0)
+  lastEvaluatedAt            DateTime       @default(now())
+  createdAt                  DateTime       @default(now())
+  updatedAt                  DateTime       @updatedAt
+  ticket                     SupportTicket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([state, lastEvaluatedAt])
+  @@index([clockStartedAt, resolutionDueAt])
 }

@@ -16,13 +16,15 @@ import { CreateSupportTicketDto } from './dto/create-support-ticket.dto.js';
 import { ListSupportTicketsDto } from './dto/list-support-tickets.dto.js';
 import { SupportAdminActionDto } from './dto/support-admin-action.dto.js';
 import { UpdateTicketStatusDto } from './dto/update-ticket-status.dto.js';
+import { SupportSlaService } from './sla.service.js';
 
 @Injectable()
 export class SupportService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: AppConfigService,
-    private readonly queues: QueueProducerService
+    private readonly queues: QueueProducerService,
+    private readonly sla: SupportSlaService
   ) {}
 
   async createTicket(dto: CreateSupportTicketDto, actor?: AccessClaims) {
@@ -64,6 +66,13 @@ export class SupportService {
     if (ticket.severity === 'p0' || ticket.severity === 'p1') {
       await this.sendPriorityAlert(ticket.id, ticket.organizationId, ticket.severity, dto.title);
     }
+
+    await this.sla.initializeTicketSla({
+      ticketId: ticket.id,
+      organizationId: ticket.organizationId,
+      severity: ticket.severity,
+      startedAt: ticket.createdAt
+    });
 
     return ticket;
   }
@@ -167,6 +176,11 @@ export class SupportService {
       }
     });
 
+    if (!ticket.status || (ticket.status === 'open' && dto.status !== 'open')) {
+      await this.sla.markFirstResponse(ticket.id);
+    }
+    await this.sla.onStatusChanged(ticket.id, ticket.status, dto.status);
+
     return updated;
   }
 
@@ -202,6 +216,8 @@ export class SupportService {
         metadata: { noteId: note.id }
       }
     });
+
+    await this.sla.markFirstResponse(ticket.id);
 
     return note;
   }

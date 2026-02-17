@@ -137,4 +137,62 @@ export class AppConfigService {
   get supportMaxSubmissionsPerMinute(): number {
     return this.env.SUPPORT_MAX_SUBMISSIONS_PER_MINUTE;
   }
+
+  get slaPolicyVersion(): string {
+    return this.env.SLA_POLICY_VERSION;
+  }
+
+  get slaBusinessHoursOnly(): boolean {
+    return this.env.SLA_BUSINESS_HOURS_ONLY;
+  }
+
+  get slaBusinessHourStart(): number {
+    return this.env.SLA_BUSINESS_HOUR_START;
+  }
+
+  get slaBusinessHourEnd(): number {
+    return this.env.SLA_BUSINESS_HOUR_END;
+  }
+
+  get slaAlertWebhookUrl(): string {
+    return this.env.SLA_ALERT_WEBHOOK_URL;
+  }
+
+  get slaQuoteResponseMinutes(): number {
+    return this.env.SLA_QUOTE_RESPONSE_MINUTES;
+  }
+
+  get slaBookingConfirmationMinutes(): number {
+    return this.env.SLA_BOOKING_CONFIRMATION_MINUTES;
+  }
+
+  getSupportFirstResponseTargetMinutes(severity: 'p0' | 'p1' | 'p2' | 'p3'): number {
+    switch (severity) {
+      case 'p0':
+        return this.env.SLA_P0_FIRST_RESPONSE_MINUTES;
+      case 'p1':
+        return this.env.SLA_P1_FIRST_RESPONSE_MINUTES;
+      case 'p2':
+        return this.env.SLA_P2_FIRST_RESPONSE_MINUTES;
+      case 'p3':
+        return this.env.SLA_P3_FIRST_RESPONSE_MINUTES;
+      default:
+        return this.env.SLA_P2_FIRST_RESPONSE_MINUTES;
+    }
+  }
+
+  getSupportResolutionTargetMinutes(severity: 'p0' | 'p1' | 'p2' | 'p3'): number {
+    switch (severity) {
+      case 'p0':
+        return this.env.SLA_P0_RESOLUTION_MINUTES;
+      case 'p1':
+        return this.env.SLA_P1_RESOLUTION_MINUTES;
+      case 'p2':
+        return this.env.SLA_P2_RESOLUTION_MINUTES;
+      case 'p3':
+        return this.env.SLA_P3_RESOLUTION_MINUTES;
+      default:
+        return this.env.SLA_P2_RESOLUTION_MINUTES;
+    }
+  }
 }

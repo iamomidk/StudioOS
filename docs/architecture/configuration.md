@@ -38,6 +38,21 @@ This document lists baseline environment variables for each app and service in S
 | `SUPPORT_ALLOWED_ATTACHMENT_TYPES` | No | `image/jpeg,image/png,image/webp,text/plain,application/pdf` | Attachment MIME allowlist enforced on support submissions. |
 | `SUPPORT_MAX_ATTACHMENT_BYTES` | No | `5242880` | Maximum allowed size for one support attachment in bytes. |
 | `SUPPORT_MAX_SUBMISSIONS_PER_MINUTE` | No | `5` | Per-user/org support ticket submission rate limit over one minute. |
+| `SLA_POLICY_VERSION` | No | `v1` | SLA policy version stamped into ticket SLA snapshots for historical correctness. |
+| `SLA_P0_FIRST_RESPONSE_MINUTES` | No | `15` | P0 first response target (minutes). |
+| `SLA_P1_FIRST_RESPONSE_MINUTES` | No | `60` | P1 first response target (minutes). |
+| `SLA_P2_FIRST_RESPONSE_MINUTES` | No | `240` | P2 first response target (minutes). |
+| `SLA_P3_FIRST_RESPONSE_MINUTES` | No | `720` | P3 first response target (minutes). |
+| `SLA_P0_RESOLUTION_MINUTES` | No | `240` | P0 resolution target (minutes). |
+| `SLA_P1_RESOLUTION_MINUTES` | No | `1440` | P1 resolution target (minutes). |
+| `SLA_P2_RESOLUTION_MINUTES` | No | `4320` | P2 resolution target (minutes). |
+| `SLA_P3_RESOLUTION_MINUTES` | No | `10080` | P3 resolution target (minutes). |
+| `SLA_BUSINESS_HOURS_ONLY` | No | `false` | Enables business-hours-only SLA clock advancement. |
+| `SLA_BUSINESS_HOUR_START` | No | `9` | Local business hour start (0-23). |
+| `SLA_BUSINESS_HOUR_END` | No | `17` | Local business hour end (1-24). |
+| `SLA_ALERT_WEBHOOK_URL` | No | `` | Optional webhook for pre-breach/breach/recovery alerts. |
+| `SLA_QUOTE_RESPONSE_MINUTES` | No | `1440` | Optional workflow SLA target for lead->quote response reporting. |
+| `SLA_BOOKING_CONFIRMATION_MINUTES` | No | `720` | Optional workflow SLA target for quote->booking confirmation reporting. |
 
 ## apps/web_nextjs
 

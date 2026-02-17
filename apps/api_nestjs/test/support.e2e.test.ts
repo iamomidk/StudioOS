@@ -26,7 +26,10 @@ void test('support tickets can be submitted, triaged, and admin actions are audi
     FEATURE_SUPPORT_ADMIN_ACTIONS_ENABLED: 'true',
     SUPPORT_MAX_SUBMISSIONS_PER_MINUTE: '1',
     SUPPORT_ALLOWED_ATTACHMENT_TYPES: 'image/png,application/pdf',
-    SUPPORT_MAX_ATTACHMENT_BYTES: '1024'
+    SUPPORT_MAX_ATTACHMENT_BYTES: '1024',
+    SLA_P1_FIRST_RESPONSE_MINUTES: '1',
+    SLA_P1_RESOLUTION_MINUTES: '2',
+    SLA_BUSINESS_HOURS_ONLY: 'false'
   });
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -150,6 +153,22 @@ void test('support tickets can be submitted, triaged, and admin actions are audi
     .send({ status: 'triaged' });
   assert.equal(triaged.status, 200);
 
+  await prisma.supportTicketSla.update({
+    where: { ticketId },
+    data: {
+      firstResponseDueAt: new Date(Date.now() - 5 * 60 * 1000),
+      resolutionDueAt: new Date(Date.now() - 5 * 60 * 1000)
+    }
+  });
+
+  const breachedTransition = await request(server)
+    .patch(
+      `/support/tickets/${encodeURIComponent(ticketId)}/status?organizationId=${encodeURIComponent(organization.id)}`
+    )
+    .set('Authorization', `Bearer ${ownerToken}`)
+    .send({ status: 'in_progress' });
+  assert.equal(breachedTransition.status, 200);
+
   const note = await request(server)
     .post(
       `/support/tickets/${encodeURIComponent(ticketId)}/notes?organizationId=${encodeURIComponent(organization.id)}`
@@ -169,6 +188,36 @@ void test('support tickets can be submitted, triaged, and admin actions are audi
     .set('Authorization', `Bearer ${ownerToken}`)
     .send({ organizationId: organization.id, ticketId, referenceId: 'notif-1' });
   assert.equal(ownerAdminAction.status, 201);
+
+  const resolved = await request(server)
+    .patch(
+      `/support/tickets/${encodeURIComponent(ticketId)}/status?organizationId=${encodeURIComponent(organization.id)}`
+    )
+    .set('Authorization', `Bearer ${ownerToken}`)
+    .send({ status: 'resolved' });
+  assert.equal(resolved.status, 200);
+
+  const dashboard = await request(server)
+    .get(`/sla/dashboard?organizationId=${encodeURIComponent(organization.id)}`)
+    .set('Authorization', `Bearer ${ownerToken}`);
+  assert.equal(dashboard.status, 200);
+  assert.equal(
+    (
+      dashboard.body as {
+        bySeverity: Array<{ severity: string; totalTickets: number; complianceRate: number }>;
+      }
+    ).bySeverity.some((row) => row.severity === 'p1' && row.totalTickets >= 1),
+    true
+  );
+
+  const weekly = await request(server)
+    .get(`/sla/weekly-report?organizationId=${encodeURIComponent(organization.id)}`)
+    .set('Authorization', `Bearer ${ownerToken}`);
+  assert.equal(weekly.status, 200);
+  assert.equal(
+    (weekly.body as { support: { breachTrend: unknown[] } }).support.breachTrend.length >= 1,
+    true
+  );
 
   const audits = await prisma.auditLog.findMany({
     where: {
@@ -191,6 +240,11 @@ void test('support tickets can be submitted, triaged, and admin actions are audi
     true
   );
 
+  const sla = await prisma.supportTicketSla.findUnique({ where: { ticketId } });
+  assert.ok(sla);
+  assert.equal(sla?.state === 'recovered' || sla?.state === 'breached', true);
+
+  await prisma.supportTicketSla.deleteMany({ where: { ticketId } });
   await prisma.supportTicketNote.deleteMany({ where: { ticketId } });
   await prisma.supportTicket.deleteMany({ where: { organizationId: organization.id } });
   await prisma.auditLog.deleteMany({ where: { organizationId: organization.id } });

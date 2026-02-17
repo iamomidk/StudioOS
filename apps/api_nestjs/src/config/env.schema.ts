@@ -57,7 +57,22 @@ const envSchema = z.object({
     .string()
     .default('image/jpeg,image/png,image/webp,text/plain,application/pdf'),
   SUPPORT_MAX_ATTACHMENT_BYTES: z.coerce.number().int().min(1).default(5242880),
-  SUPPORT_MAX_SUBMISSIONS_PER_MINUTE: z.coerce.number().int().min(1).default(5)
+  SUPPORT_MAX_SUBMISSIONS_PER_MINUTE: z.coerce.number().int().min(1).default(5),
+  SLA_POLICY_VERSION: z.string().default('v1'),
+  SLA_P0_FIRST_RESPONSE_MINUTES: z.coerce.number().int().min(1).default(15),
+  SLA_P1_FIRST_RESPONSE_MINUTES: z.coerce.number().int().min(1).default(60),
+  SLA_P2_FIRST_RESPONSE_MINUTES: z.coerce.number().int().min(1).default(240),
+  SLA_P3_FIRST_RESPONSE_MINUTES: z.coerce.number().int().min(1).default(720),
+  SLA_P0_RESOLUTION_MINUTES: z.coerce.number().int().min(1).default(240),
+  SLA_P1_RESOLUTION_MINUTES: z.coerce.number().int().min(1).default(1440),
+  SLA_P2_RESOLUTION_MINUTES: z.coerce.number().int().min(1).default(4320),
+  SLA_P3_RESOLUTION_MINUTES: z.coerce.number().int().min(1).default(10080),
+  SLA_BUSINESS_HOURS_ONLY: booleanFromEnv.default(false),
+  SLA_BUSINESS_HOUR_START: z.coerce.number().int().min(0).max(23).default(9),
+  SLA_BUSINESS_HOUR_END: z.coerce.number().int().min(1).max(24).default(17),
+  SLA_ALERT_WEBHOOK_URL: z.string().default(''),
+  SLA_QUOTE_RESPONSE_MINUTES: z.coerce.number().int().min(1).default(1440),
+  SLA_BOOKING_CONFIRMATION_MINUTES: z.coerce.number().int().min(1).default(720)
 });
 
 export type AppEnv = z.infer<typeof envSchema>;
