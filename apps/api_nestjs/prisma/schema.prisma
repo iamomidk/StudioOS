@@ -85,6 +85,34 @@ enum PaymentStatus {
   refunded
 }
 
+enum BillingPriceComponentType {
+  fixed
+  seat
+  usage
+}
+
+enum BillingCycle {
+  monthly
+  annual
+}
+
+enum SubscriptionStatus {
+  active
+  cancelled
+}
+
+enum TrueUpStatus {
+  pending
+  invoiced
+  settled
+}
+
+enum BillingAdjustmentStatus {
+  pending_approval
+  approved
+  rejected
+}
+
 enum ExperimentStatus {
   draft
   active
@@ -228,6 +256,11 @@ model User {
   purgeRequestsApproved           EnterprisePurgeRequest[] @relation("EnterprisePurgeRequestApprovedBy")
   purgeRequestsTarget             EnterprisePurgeRequest[] @relation("EnterprisePurgeRequestTargetUser")
   rentalSyncDiagnosticsAsLastActor RentalSyncDiagnostic[]
+  billingSubscriptions            BillingSubscription[]
+  billingUsageRecordsIngested     BillingUsageRecord[] @relation("BillingUsageIngestedBy")
+  billingSeatChangeLogs           BillingSubscriptionSeatChangeLog[]
+  billingAdjustmentsRequested     BillingAdjustmentRequest[] @relation("BillingAdjustmentRequestedBy")
+  billingAdjustmentsApproved      BillingAdjustmentRequest[] @relation("BillingAdjustmentApprovedBy")
 }
 
 model RefreshToken {
@@ -289,6 +322,15 @@ model Organization {
   partnerIdempotencyRecords   PartnerApiIdempotencyRecord[]
   complianceExportRecords      ComplianceExportRecord[]
   purgeRequests               EnterprisePurgeRequest[]
+  billingPlans                BillingPlan[]
+  billingPlanVersions         BillingPlanVersion[]
+  billingSubscriptions        BillingSubscription[]
+  billingMeters               BillingMeter[]
+  billingUsageRecords         BillingUsageRecord[]
+  billingTrueUps              BillingTrueUpRecord[]
+  billingInvoiceLines         BillingInvoiceLine[]
+  billingSeatChangeLogs       BillingSubscriptionSeatChangeLog[]
+  billingAdjustments          BillingAdjustmentRequest[]
 }
 
 model Membership {
@@ -319,6 +361,7 @@ model Client {
   projects       Project[]
   invoices       Invoice[]
   rentalOrders   RentalOrder[]
+  billingSubscriptions BillingSubscription[]
 
   @@index([organizationId])
 }
@@ -637,9 +680,228 @@ model Invoice {
   webhookEvents  PaymentWebhookEvent[]
   reconciliationItems        ReconciliationItem[]
   reconciliationDiscrepancies ReconciliationDiscrepancy[]
+  billingLines               BillingInvoiceLine[]
+  generatedTrueUps           BillingTrueUpRecord[]
+  billingAdjustments         BillingAdjustmentRequest[]
 
   @@unique([organizationId, invoiceNumber])
   @@index([organizationId, status])
+}
+
+model BillingPlan {
+  id             String           @id @default(cuid())
+  organizationId String
+  code           String
+  name           String
+  description    String?
+  billingCycle   BillingCycle
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  versions       BillingPlanVersion[]
+  subscriptions  BillingSubscription[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, createdAt])
+}
+
+model BillingPlanVersion {
+  id                   String                @id @default(cuid())
+  organizationId       String
+  planId               String
+  versionNumber        Int
+  currency             String                @default("USD")
+  minimumCommitCents   Int                  @default(0)
+  effectiveFrom        DateTime
+  effectiveTo          DateTime?
+  createdAt            DateTime              @default(now())
+  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan                 BillingPlan           @relation(fields: [planId], references: [id], onDelete: Cascade)
+  components           BillingPriceComponent[]
+  subscriptions        BillingSubscription[]
+
+  @@unique([planId, versionNumber])
+  @@index([organizationId, planId, effectiveFrom])
+}
+
+model BillingPriceComponent {
+  id                  String                    @id @default(cuid())
+  planVersionId       String
+  componentType       BillingPriceComponentType
+  code                String
+  displayName         String
+  unit                String?
+  unitPriceCents      Int
+  includedUnits       Int                       @default(0)
+  minimumUnits        Int                       @default(0)
+  tierJson            Json?
+  createdAt           DateTime                  @default(now())
+  planVersion         BillingPlanVersion        @relation(fields: [planVersionId], references: [id], onDelete: Cascade)
+  subscriptionItems   BillingSubscriptionItem[]
+  invoiceLines        BillingInvoiceLine[]
+
+  @@unique([planVersionId, code])
+  @@index([planVersionId, componentType])
+}
+
+model BillingSubscription {
+  id                   String                          @id @default(cuid())
+  organizationId       String
+  clientId             String?
+  planId               String
+  planVersionId        String
+  status               SubscriptionStatus             @default(active)
+  currency             String                         @default("USD")
+  startsAt             DateTime
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelledAt          DateTime?
+  createdByUserId      String?
+  createdAt            DateTime                       @default(now())
+  updatedAt            DateTime                       @updatedAt
+  organization         Organization                   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client               Client?                        @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  plan                 BillingPlan                    @relation(fields: [planId], references: [id], onDelete: Restrict)
+  planVersion          BillingPlanVersion             @relation(fields: [planVersionId], references: [id], onDelete: Restrict)
+  createdBy            User?                          @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  items                BillingSubscriptionItem[]
+  usageRecords         BillingUsageRecord[]
+  trueUps              BillingTrueUpRecord[]
+  seatChangeLogs       BillingSubscriptionSeatChangeLog[]
+  invoiceLines         BillingInvoiceLine[]
+  adjustments          BillingAdjustmentRequest[]
+
+  @@index([organizationId, status, currentPeriodEnd])
+}
+
+model BillingSubscriptionItem {
+  id               String              @id @default(cuid())
+  subscriptionId   String
+  componentId      String
+  quantity         Int                 @default(0)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  subscription     BillingSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  component        BillingPriceComponent @relation(fields: [componentId], references: [id], onDelete: Restrict)
+
+  @@unique([subscriptionId, componentId])
+  @@index([subscriptionId, createdAt])
+}
+
+model BillingMeter {
+  id              String              @id @default(cuid())
+  organizationId  String
+  code            String
+  unit            String
+  description     String?
+  createdAt       DateTime            @default(now())
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  usageRecords    BillingUsageRecord[]
+
+  @@unique([organizationId, code])
+}
+
+model BillingUsageRecord {
+  id               String              @id @default(cuid())
+  organizationId   String
+  subscriptionId   String
+  meterId          String
+  quantity         Int
+  usageAt          DateTime
+  dedupKey         String
+  source           String              @default("api")
+  correctionOfId   String?
+  ingestedByUserId String?
+  ingestedAt       DateTime            @default(now())
+  organization     Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscription     BillingSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  meter            BillingMeter        @relation(fields: [meterId], references: [id], onDelete: Restrict)
+  correctionOf     BillingUsageRecord? @relation("BillingUsageCorrection", fields: [correctionOfId], references: [id], onDelete: SetNull)
+  corrections      BillingUsageRecord[] @relation("BillingUsageCorrection")
+  ingestedBy       User?               @relation("BillingUsageIngestedBy", fields: [ingestedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, dedupKey])
+  @@index([subscriptionId, usageAt])
+}
+
+model BillingTrueUpRecord {
+  id               String              @id @default(cuid())
+  organizationId   String
+  subscriptionId   String
+  periodStart      DateTime
+  periodEnd        DateTime
+  amountCents      Int
+  status           TrueUpStatus        @default(pending)
+  generatedInvoiceId String?
+  metadata         Json?
+  createdAt        DateTime            @default(now())
+  organization     Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscription     BillingSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  generatedInvoice Invoice?            @relation(fields: [generatedInvoiceId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
+}
+
+model BillingInvoiceLine {
+  id               String               @id @default(cuid())
+  organizationId   String
+  invoiceId        String
+  subscriptionId   String?
+  componentId      String?
+  lineType         String
+  description      String
+  quantity         Int
+  unitPriceCents   Int
+  amountCents      Int
+  periodStart      DateTime?
+  periodEnd        DateTime?
+  createdAt        DateTime             @default(now())
+  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoice          Invoice              @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  subscription     BillingSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  component        BillingPriceComponent? @relation(fields: [componentId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId, createdAt])
+  @@index([organizationId, subscriptionId])
+}
+
+model BillingSubscriptionSeatChangeLog {
+  id               String              @id @default(cuid())
+  organizationId   String
+  subscriptionId   String
+  fromQuantity     Int
+  toQuantity       Int
+  prorationDeltaCents Int
+  changedAt        DateTime            @default(now())
+  changedByUserId  String?
+  organization     Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscription     BillingSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  changedBy        User?               @relation(fields: [changedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([subscriptionId, changedAt])
+}
+
+model BillingAdjustmentRequest {
+  id               String                  @id @default(cuid())
+  organizationId   String
+  subscriptionId   String?
+  invoiceId        String?
+  amountCents      Int
+  reason           String
+  status           BillingAdjustmentStatus @default(pending_approval)
+  requestedByUserId String?
+  approvedByUserId String?
+  approvedAt       DateTime?
+  metadata         Json?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  organization     Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscription     BillingSubscription?    @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  invoice          Invoice?                @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  requestedBy      User?                   @relation("BillingAdjustmentRequestedBy", fields: [requestedByUserId], references: [id], onDelete: SetNull)
+  approvedBy       User?                   @relation("BillingAdjustmentApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
 }
 
 model Payment {

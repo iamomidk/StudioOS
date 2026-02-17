@@ -261,6 +261,10 @@ export class AppConfigService {
     return this.env.PERF_SLOW_QUERY_MS;
   }
 
+  get billingUsageAnomalyThreshold(): number {
+    return this.env.BILLING_USAGE_ANOMALY_THRESHOLD;
+  }
+
   shouldServeTraffic(key: string): boolean {
     if (this.failoverMode === 'off' || this.failoverMode === 'active') {
       return true;
