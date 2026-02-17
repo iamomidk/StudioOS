@@ -1,0 +1,57 @@
+name: Critical E2E Path
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  critical-e2e:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: studioos
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run API critical path suite
+        run: pnpm --filter @studioos/apps-api_nestjs test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/studioos
+          REDIS_URL: redis://localhost:6379
+          JWT_ACCESS_TOKEN_SECRET: access-secret-for-tests
+          JWT_REFRESH_TOKEN_SECRET: refresh-secret-for-tests
+          PAYMENT_WEBHOOK_DEMO_SECRET: webhook-secret-for-tests
