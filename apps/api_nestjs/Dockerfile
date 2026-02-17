@@ -13,7 +13,7 @@ COPY apps/web_nextjs/package.json apps/web_nextjs/package.json
 COPY packages/api_contracts_openapi/package.json packages/api_contracts_openapi/package.json
 COPY packages/shared_ts/package.json packages/shared_ts/package.json
 
-RUN pnpm install --frozen-lockfile --reporter=append-only
+RUN pnpm install --frozen-lockfile --reporter=silent
 
 COPY . .
 
