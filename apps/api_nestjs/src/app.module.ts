@@ -18,6 +18,7 @@ import { LaunchModule } from './modules/launch/launch.module.js';
 import { MarketplaceModule } from './modules/marketplace/marketplace.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { OrgsModule } from './modules/orgs/orgs.module.js';
+import { PartnerModule } from './modules/partner/partner.module.js';
 import { PrismaModule } from './modules/prisma/prisma.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
 import { QueuesModule } from './modules/queues/queues.module.js';
@@ -47,6 +48,7 @@ import { UsersModule } from './modules/users/users.module.js';
     StorageModule,
     BillingModule,
     NotificationsModule,
+    PartnerModule,
     AuditModule,
     AnalyticsModule,
     LaunchModule,

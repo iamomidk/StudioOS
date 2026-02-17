@@ -1,0 +1,48 @@
+{
+  "info": {
+    "name": "StudioOS Partner API v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Partner-facing API collection for scoped API key access."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "organizationId", "value": "org_placeholder" },
+    { "key": "partnerApiKey", "value": "pk_xxx.secret_xxx" },
+    { "key": "idempotencyKey", "value": "partner-write-001" }
+  ],
+  "item": [
+    {
+      "name": "List Leads",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "x-partner-api-key", "value": "{{partnerApiKey}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/partner/v1/leads?organizationId={{organizationId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "partner", "v1", "leads"],
+          "query": [{ "key": "organizationId", "value": "{{organizationId}}" }]
+        }
+      }
+    },
+    {
+      "name": "Create Lead",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-partner-api-key", "value": "{{partnerApiKey}}" },
+          { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"name\": \"Partner Lead\",\n  \"email\": \"partner@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/partner/v1/leads",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "partner", "v1", "leads"]
+        }
+      }
+    }
+  ]
+}

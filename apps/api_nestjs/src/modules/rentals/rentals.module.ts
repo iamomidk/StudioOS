@@ -11,6 +11,7 @@ import { RentalsService } from './rentals.service.js';
 @Module({
   imports: [ConfigModule, PrismaModule, AnalyticsModule, RiskModule],
   controllers: [RentalsController],
-  providers: [RentalsService, AccessTokenGuard]
+  providers: [RentalsService, AccessTokenGuard],
+  exports: [RentalsService]
 })
 export class RentalsModule {}

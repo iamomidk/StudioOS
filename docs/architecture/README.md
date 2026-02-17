@@ -23,3 +23,4 @@ Additional operations/release docs live outside the architecture package:
 - `../analytics/pricing-experiments.md`: Pricing experiment model, evaluation endpoints, and guardrails.
 - `../analytics/onboarding-funnel.md`: Onboarding funnel instrumentation, activation definition, and dashboard payloads.
 - `../finance/reconciliation.md`: Billing reconciliation model, discrepancy workflows, and daily scheduling.
+- `../api/partner-v1.md`: Partner API v1 auth/scopes/quotas, endpoint contract, and integration quickstart.

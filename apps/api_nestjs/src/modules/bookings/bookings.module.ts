@@ -10,6 +10,7 @@ import { BookingsService } from './bookings.service.js';
 @Module({
   imports: [ConfigModule, PrismaModule, AnalyticsModule],
   controllers: [BookingsController],
-  providers: [BookingsService, AccessTokenGuard]
+  providers: [BookingsService, AccessTokenGuard],
+  exports: [BookingsService]
 })
 export class BookingsModule {}

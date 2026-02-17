@@ -12,6 +12,7 @@ import { QuotesService } from './quotes.service.js';
 @Module({
   imports: [ConfigModule, PrismaModule, AnalyticsModule],
   controllers: [CrmController, QuotesController],
-  providers: [CrmService, QuotesService, AccessTokenGuard]
+  providers: [CrmService, QuotesService, AccessTokenGuard],
+  exports: [CrmService, QuotesService]
 })
 export class CrmModule {}

@@ -158,6 +158,12 @@ enum RiskLevel {
   high
 }
 
+enum PartnerCredentialStatus {
+  active
+  suspended
+  revoked
+}
+
 model User {
   id             String              @id @default(cuid())
   email          String              @unique
@@ -226,6 +232,9 @@ model Organization {
   reconciliationDiscrepancies ReconciliationDiscrepancy[]
   reconciliationActionLogs    ReconciliationActionLog[]
   riskEvaluations             RiskEvaluation[]
+  partnerCredentials          PartnerApiCredential[]
+  partnerRequestLogs          PartnerApiRequestLog[]
+  partnerIdempotencyRecords   PartnerApiIdempotencyRecord[]
 }
 
 model Membership {
@@ -615,6 +624,63 @@ model RiskEvaluation {
   @@index([organizationId, createdAt])
   @@index([flowType, riskLevel, createdAt])
   @@index([reviewStatus, createdAt])
+}
+
+model PartnerApiCredential {
+  id                    String                  @id @default(cuid())
+  organizationId        String
+  name                  String
+  keyId                 String                  @unique
+  keyHash               String
+  scopes                String[]
+  status                PartnerCredentialStatus @default(active)
+  requestsPerMinute     Int                     @default(120)
+  dailyQuota            Int                     @default(10000)
+  requestSigningRequired Boolean                @default(false)
+  signingSecret         String?
+  rotatedFromId         String?
+  lastUsedAt            DateTime?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  organization          Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requestLogs           PartnerApiRequestLog[]
+  idempotencyRecords    PartnerApiIdempotencyRecord[]
+
+  @@index([organizationId, status])
+}
+
+model PartnerApiRequestLog {
+  id            String               @id @default(cuid())
+  organizationId String
+  credentialId  String
+  method        String
+  path          String
+  statusCode    Int
+  latencyMs     Int
+  createdAt     DateTime             @default(now())
+  organization  Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  credential    PartnerApiCredential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+
+  @@index([credentialId, createdAt])
+  @@index([organizationId, createdAt])
+}
+
+model PartnerApiIdempotencyRecord {
+  id             String               @id @default(cuid())
+  organizationId String
+  credentialId   String
+  method         String
+  path           String
+  idempotencyKey String
+  requestHash    String
+  statusCode     Int
+  responseBody   Json
+  createdAt      DateTime             @default(now())
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  credential     PartnerApiCredential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+
+  @@unique([credentialId, method, path, idempotencyKey])
+  @@index([organizationId, createdAt])
 }
 
 model AuditLog {
