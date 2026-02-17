@@ -19,7 +19,10 @@
     "backup:verify": "node scripts/backup-verify.mjs",
     "pilot:kpi:quality-check": "node scripts/pilot-kpi-quality-check.mjs",
     "launch:health": "node scripts/launch-health.mjs",
-    "launch:post-review": "node scripts/post-launch-review.mjs"
+    "launch:post-review": "node scripts/post-launch-review.mjs",
+    "perf:data:generate": "node scripts/perf-generate-data.mjs",
+    "perf:test": "pnpm perf:data:generate && node scripts/perf-runner.mjs",
+    "perf:test:ci": "node scripts/perf-runner.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

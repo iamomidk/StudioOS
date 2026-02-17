@@ -75,6 +75,7 @@ This document lists baseline environment variables for each app and service in S
 | `TRAFFIC_SHIFT_HASH_SALT`                | No       | `studioos-traffic-shift-v1`                                                                                                     | Hash salt used for deterministic traffic shift bucketing.                                                         |
 | `MAINTENANCE_MODE_REGIONS`               | No       | ``                                                                                                                              | Comma-separated region IDs currently in maintenance mode; guarded requests return `503` unless bypassed.          |
 | `MAINTENANCE_BYPASS_TOKEN`               | No       | ``                                                                                                                              | Optional header token (`x-region-maintenance-bypass`) to allow controlled maintenance drills.                     |
+| `PERF_SLOW_QUERY_MS`                     | No       | `200`                                                                                                                           | Slow query threshold (ms) used by in-process Prisma profiling hooks exported via `/metrics`.                      |
 
 ## apps/web_nextjs
 

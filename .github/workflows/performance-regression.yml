@@ -1,0 +1,49 @@
+name: Performance Regression
+
+on:
+  workflow_dispatch:
+    inputs:
+      perf_base_url:
+        description: Base URL for perf runs
+        required: true
+        default: http://localhost:3000
+      perf_env:
+        description: Environment label (local/staging)
+        required: true
+        default: staging
+      use_simulated:
+        description: Use simulated mode when k6 is unavailable
+        required: false
+        default: 'true'
+  push:
+    branches:
+      - 'release/**'
+
+jobs:
+  release-performance:
+    runs-on: ubuntu-latest
+    env:
+      PERF_BASE_URL: ${{ github.event.inputs.perf_base_url || vars.PERF_BASE_URL || 'http://localhost:3000' }}
+      PERF_ENV: ${{ github.event.inputs.perf_env || 'staging' }}
+      PERF_USE_SIMULATED: ${{ github.event.inputs.use_simulated || 'true' }}
+      PERF_SEED: 42
+      PERF_SCENARIOS: smoke,baseline
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run performance regression gate
+        run: pnpm perf:test:ci
+      - name: Upload perf artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-report
+          path: artifacts/perf/*
+          if-no-files-found: warn

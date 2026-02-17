@@ -1,5 +1,6 @@
 import { Controller, Get, Header } from '@nestjs/common';
 
+import { dbProfileStore } from '../../perf/db-profile.store.js';
 import { MetricsService } from './metrics.service.js';
 
 function sanitizeLabel(value: string): string {
@@ -38,6 +39,7 @@ export class MetricsController {
   @Header('Content-Type', 'text/plain; version=0.0.4')
   getMetrics(): string {
     const snapshot = this.metrics.snapshot();
+    const dbSnapshot = dbProfileStore.snapshot();
 
     const lines: string[] = [
       '# HELP studioos_http_requests_total Total HTTP requests processed.',
@@ -87,6 +89,34 @@ export class MetricsController {
     for (const [worker, total] of Object.entries(snapshot.workerFailureTotal)) {
       lines.push(
         `studioos_worker_jobs_total{worker="${sanitizeLabel(worker)}",status="failure"} ${total}`
+      );
+    }
+
+    lines.push('# HELP studioos_db_query_duration_ms Prisma query duration histogram.');
+    lines.push('# TYPE studioos_db_query_duration_ms histogram');
+    let cumulative = 0;
+    for (let index = 0; index < dbSnapshot.bucketsMs.length; index += 1) {
+      cumulative += dbSnapshot.buckets[index] ?? 0;
+      lines.push(
+        `studioos_db_query_duration_ms_bucket{le="${dbSnapshot.bucketsMs[index]}"} ${cumulative}`
+      );
+    }
+    cumulative += dbSnapshot.buckets[dbSnapshot.bucketsMs.length] ?? 0;
+    lines.push(`studioos_db_query_duration_ms_bucket{le="+Inf"} ${cumulative}`);
+    lines.push(`studioos_db_query_duration_ms_sum ${dbSnapshot.sumMs}`);
+    lines.push(`studioos_db_query_duration_ms_count ${dbSnapshot.count}`);
+
+    lines.push('# HELP studioos_db_slow_queries_total Total slow queries observed in process.');
+    lines.push('# TYPE studioos_db_slow_queries_total counter');
+    lines.push(`studioos_db_slow_queries_total ${dbSnapshot.slowQueryCount}`);
+
+    for (let index = 0; index < dbSnapshot.slowSamples.length; index += 1) {
+      const sample = dbSnapshot.slowSamples[index];
+      if (!sample) {
+        continue;
+      }
+      lines.push(
+        `studioos_db_slow_query_sample_ms{rank="${index + 1}",fingerprint="${sanitizeLabel(sample.queryFingerprint)}"} ${sample.durationMs}`
       );
     }
 

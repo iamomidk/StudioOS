@@ -29,3 +29,4 @@ Additional operations/release docs live outside the architecture package:
 - `../infra/adr-0001-multi-region-strategy.md`: Multi-region architecture decision record (single-writer + passive failover baseline).
 - `../mobile/offline-conflict-resolution-v2.md`: Mobile mutation-log sync v2 contract, deterministic conflict handling, and diagnostics endpoint.
 - `../automation/workflow-builder.md`: No-code workflow triggers/conditions/actions, safety controls, versioning, and execution history APIs.
+- `../performance/load-testing-automation.md`: Performance target catalog, load profiles, regression gates, and bottleneck reporting artifacts.

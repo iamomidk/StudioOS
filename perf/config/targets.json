@@ -1,0 +1,18 @@
+{
+  "flows": {
+    "auth_login": { "p95_ms": 500, "error_rate": 0.01 },
+    "lead_quote_booking": { "p95_ms": 900, "error_rate": 0.02 },
+    "rental_lifecycle": { "p95_ms": 900, "error_rate": 0.02 },
+    "invoice_webhook": { "p95_ms": 700, "error_rate": 0.01 }
+  },
+  "regression": {
+    "p95_drift_ratio": 0.15,
+    "error_rate_drift_abs": 0.005
+  },
+  "profiles": {
+    "smoke": { "vus": 5, "duration_s": 30 },
+    "baseline": { "vus": 20, "duration_s": 120 },
+    "peak": { "vus": 50, "duration_s": 90 },
+    "soak": { "vus": 15, "duration_s": 900 }
+  }
+}

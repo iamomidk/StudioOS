@@ -96,7 +96,8 @@ const envSchema = z.object({
   TRAFFIC_SHIFT_PERCENTAGE: z.coerce.number().int().min(0).max(100).default(100),
   TRAFFIC_SHIFT_HASH_SALT: z.string().min(1).default('studioos-traffic-shift-v1'),
   MAINTENANCE_MODE_REGIONS: z.string().default(''),
-  MAINTENANCE_BYPASS_TOKEN: z.string().default('')
+  MAINTENANCE_BYPASS_TOKEN: z.string().default(''),
+  PERF_SLOW_QUERY_MS: z.coerce.number().int().min(1).default(200)
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

@@ -257,6 +257,10 @@ export class AppConfigService {
     return this.env.MAINTENANCE_BYPASS_TOKEN;
   }
 
+  get perfSlowQueryMs(): number {
+    return this.env.PERF_SLOW_QUERY_MS;
+  }
+
   shouldServeTraffic(key: string): boolean {
     if (this.failoverMode === 'off' || this.failoverMode === 'active') {
       return true;
