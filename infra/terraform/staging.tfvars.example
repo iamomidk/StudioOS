@@ -1,0 +1,14 @@
+aws_region        = "us-east-1"
+environment       = "staging"
+project_name      = "studioos"
+vpc_cidr          = "10.42.0.0/16"
+public_subnet_cidrs  = ["10.42.0.0/24", "10.42.1.0/24"]
+private_subnet_cidrs = ["10.42.10.0/24", "10.42.11.0/24"]
+
+db_name           = "studioos"
+db_username       = "studioos"
+db_password       = "CHANGE_ME_DB_PASSWORD"
+
+api_image            = "123456789012.dkr.ecr.us-east-1.amazonaws.com/studioos-api:latest"
+media_worker_image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/studioos-media-worker:latest"
+pricing_worker_image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/studioos-pricing-worker:latest"
