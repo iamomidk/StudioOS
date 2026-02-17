@@ -20,10 +20,16 @@ const baseEnv = {
   PAYMENT_WEBHOOK_DEMO_SECRET: 'webhook-secret-for-tests'
 };
 
-async function bootApp(featureEnabled: boolean): Promise<INestApplication> {
+async function bootApp(
+  featureEnabled: boolean,
+  options?: { publicLaunchEnabled?: boolean; rolloutPercentage?: number; killSwitch?: boolean }
+): Promise<INestApplication> {
   Object.assign(process.env, {
     ...baseEnv,
-    FEATURE_DISPUTES_ENABLED: String(featureEnabled)
+    FEATURE_DISPUTES_ENABLED: String(featureEnabled),
+    FEATURE_PUBLIC_LAUNCH_ENABLED: String(options?.publicLaunchEnabled ?? true),
+    PUBLIC_ROLLOUT_PERCENTAGE: String(options?.rolloutPercentage ?? 100),
+    PUBLIC_MODULES_GLOBAL_KILL_SWITCH: String(options?.killSwitch ?? false)
   });
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -118,6 +124,46 @@ void test('disputes feature flag controls module and emits audit entries', async
   });
   assert.equal(auditCount, 2);
 
+  const appKillSwitch = await bootApp(true, { killSwitch: true, rolloutPercentage: 100 });
+  const killSwitchServer = appKillSwitch.getHttpServer() as Parameters<typeof request>[0];
+  const loginKillSwitch = await request(killSwitchServer).post('/auth/login').send({
+    email: user.email,
+    password: 'Password123!'
+  });
+  const killSwitchToken = (loginKillSwitch.body as { accessToken: string }).accessToken;
+  const killSwitchCreate = await request(killSwitchServer)
+    .post('/disputes')
+    .set('Authorization', `Bearer ${killSwitchToken}`)
+    .send({
+      organizationId: organization.id,
+      entityType: 'Invoice',
+      entityId: 'inv-2',
+      reason: 'Kill switch test'
+    });
+  assert.equal(killSwitchCreate.status, 404);
+
+  const appRolloutDisabled = await bootApp(true, {
+    publicLaunchEnabled: true,
+    rolloutPercentage: 0,
+    killSwitch: false
+  });
+  const rolloutDisabledServer = appRolloutDisabled.getHttpServer() as Parameters<typeof request>[0];
+  const loginRolloutDisabled = await request(rolloutDisabledServer).post('/auth/login').send({
+    email: user.email,
+    password: 'Password123!'
+  });
+  const rolloutDisabledToken = (loginRolloutDisabled.body as { accessToken: string }).accessToken;
+  const rolloutDisabledCreate = await request(rolloutDisabledServer)
+    .post('/disputes')
+    .set('Authorization', `Bearer ${rolloutDisabledToken}`)
+    .send({
+      organizationId: organization.id,
+      entityType: 'Invoice',
+      entityId: 'inv-3',
+      reason: 'Rollout disabled test'
+    });
+  assert.equal(rolloutDisabledCreate.status, 404);
+
   await prismaEnabled.auditLog.deleteMany({ where: { organizationId: organization.id } });
   await prismaEnabled.membership.deleteMany({ where: { organizationId: organization.id } });
   await prismaEnabled.refreshToken.deleteMany({ where: { userId: user.id } });
@@ -125,5 +171,7 @@ void test('disputes feature flag controls module and emits audit entries', async
   await prismaEnabled.organization.delete({ where: { id: organization.id } });
 
   await appEnabled.close();
+  await appKillSwitch.close();
+  await appRolloutDisabled.close();
   process.env = previousEnv;
 });

@@ -16,6 +16,7 @@ Additional operations/release docs live outside the architecture package:
 - `../ops/backup-restore.md`: Backup verification automation, restore drill, and manual fallback.
 - `../ops/support-workflow.md`: Support intake/triage workflow, diagnostics, and safe admin actions.
 - `../ops/sla-policy.md`: SLA policy config, breach states, dashboard/report endpoints, and alerting.
+- `../release/public-launch.md`: Controlled rollout, kill switch, launch health, and post-launch review flow.
 - `../analytics/pilot-kpis.md`: Pilot KPI definitions, endpoint contracts, and quality checks.
 - `../analytics/pricing-experiments.md`: Pricing experiment model, evaluation endpoints, and guardrails.
 - `../analytics/onboarding-funnel.md`: Onboarding funnel instrumentation, activation definition, and dashboard payloads.

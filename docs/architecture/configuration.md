@@ -29,6 +29,12 @@ This document lists baseline environment variables for each app and service in S
 | `ALERT_ROUTING_KEY` | No | `` | Optional alert routing key/token header value for webhook-based routing. |
 | `FEATURE_MARKETPLACE_ENABLED` | No | `false` | Enables marketplace search API feature skeleton. |
 | `FEATURE_DISPUTES_ENABLED` | No | `false` | Enables disputes module API feature skeleton. |
+| `FEATURE_PUBLIC_LAUNCH_ENABLED` | No | `false` | Master switch for controlled public module rollout. |
+| `PUBLIC_MODULES_GLOBAL_KILL_SWITCH` | No | `false` | Emergency global kill switch for public modules behind rollout controls. |
+| `PUBLIC_ROLLOUT_ALLOWLIST_ORG_IDS` | No | `` | Comma-separated org IDs enabled regardless of percentage rollout. |
+| `PUBLIC_ROLLOUT_ALLOWLIST_COHORT_IDS` | No | `` | Comma-separated pilot cohort IDs enabled regardless of percentage rollout. |
+| `PUBLIC_ROLLOUT_PERCENTAGE` | No | `0` | Percentage-based rollout for non-allowlisted orgs (0-100). |
+| `PUBLIC_ROLLOUT_HASH_SALT` | No | `studioos-public-rollout-v1` | Salt used for deterministic rollout bucketing. |
 | `FEATURE_PRICING_EXPERIMENTS_ENABLED` | No | `false` | Enables server-side pricing experiment evaluation for pilot organizations. |
 | `PRICING_EXPERIMENTS_GLOBAL_KILL_SWITCH` | No | `false` | Global emergency kill switch that disables all pricing experiments immediately. |
 | `ONBOARDING_STEPS` | No | `org_created,team_invited,first_lead_created,first_quote_sent,first_booking_created,first_rental_reserved,first_invoice_issued` | Ordered onboarding funnel steps used for RC-07 activation analytics. |
@@ -124,3 +130,13 @@ This document lists baseline environment variables for each app and service in S
 | `BACKUP_AWS_REGION` | Yes | `us-east-1` | Region used for S3 backup discovery/download. |
 | `BACKUP_VERIFY_TIMEOUT_MS` | No | `600000` | Timeout budget for restore drill workflow. |
 | `BACKUP_MIN_ORG_ROWS` | No | `0` | Minimum expected `Organization` row count after restore. |
+
+## Launch health and post-launch review (release ops)
+
+`pnpm launch:health` / `pnpm launch:post-review` expect these process env vars at runtime:
+
+| Variable | Required | Example | Notes |
+| --- | --- | --- | --- |
+| `LAUNCH_BASE_URL_API` | Yes | `https://staging-api.example.com` | API base URL used by launch health/review commands. |
+| `LAUNCH_AUTH_TOKEN` | No | `eyJ...` | Bearer token for protected launch/analytics endpoints. |
+| `LAUNCH_ORGANIZATION_ID` | No | `org_smoke_123` | Optional org filter for launch KPI review queries. |

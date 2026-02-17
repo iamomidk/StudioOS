@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { createHash } from 'node:crypto';
 
 import type { AppEnv } from './env.schema.js';
 
@@ -96,6 +97,30 @@ export class AppConfigService {
     return this.env.FEATURE_DISPUTES_ENABLED;
   }
 
+  get featurePublicLaunchEnabled(): boolean {
+    return this.env.FEATURE_PUBLIC_LAUNCH_ENABLED;
+  }
+
+  get publicModulesGlobalKillSwitch(): boolean {
+    return this.env.PUBLIC_MODULES_GLOBAL_KILL_SWITCH;
+  }
+
+  get publicRolloutAllowlistOrgIds(): string[] {
+    return this.env.PUBLIC_ROLLOUT_ALLOWLIST_ORG_IDS.split(',')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+  }
+
+  get publicRolloutAllowlistCohortIds(): string[] {
+    return this.env.PUBLIC_ROLLOUT_ALLOWLIST_COHORT_IDS.split(',')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+  }
+
+  get publicRolloutPercentage(): number {
+    return this.env.PUBLIC_ROLLOUT_PERCENTAGE;
+  }
+
   get featurePricingExperimentsEnabled(): boolean {
     return this.env.FEATURE_PRICING_EXPERIMENTS_ENABLED;
   }
@@ -164,6 +189,38 @@ export class AppConfigService {
 
   get slaBookingConfirmationMinutes(): number {
     return this.env.SLA_BOOKING_CONFIRMATION_MINUTES;
+  }
+
+  isPublicRolloutEnabledFor(organizationId: string, pilotCohortId: string | null): boolean {
+    if (!this.featurePublicLaunchEnabled || this.publicModulesGlobalKillSwitch) {
+      return false;
+    }
+
+    if (this.publicRolloutAllowlistOrgIds.includes(organizationId)) {
+      return true;
+    }
+
+    if (
+      pilotCohortId &&
+      pilotCohortId.length > 0 &&
+      this.publicRolloutAllowlistCohortIds.includes(pilotCohortId)
+    ) {
+      return true;
+    }
+
+    if (this.publicRolloutPercentage >= 100) {
+      return true;
+    }
+
+    if (this.publicRolloutPercentage <= 0) {
+      return false;
+    }
+
+    const digest = createHash('sha256')
+      .update(`${this.env.PUBLIC_ROLLOUT_HASH_SALT}:${organizationId}`)
+      .digest('hex');
+    const bucket = Number.parseInt(digest.slice(0, 8), 16) % 100;
+    return bucket < this.publicRolloutPercentage;
   }
 
   getSupportFirstResponseTargetMinutes(severity: 'p0' | 'p1' | 'p2' | 'p3'): number {

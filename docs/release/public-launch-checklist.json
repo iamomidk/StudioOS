@@ -1,0 +1,48 @@
+{
+  "version": "v1",
+  "updatedAt": "2026-02-17T00:00:00.000Z",
+  "items": [
+    {
+      "id": "product-signoff",
+      "area": "product",
+      "owner": "Product Lead",
+      "dueDate": "2026-03-01",
+      "status": "pending"
+    },
+    {
+      "id": "engineering-signoff",
+      "area": "engineering",
+      "owner": "Engineering Lead",
+      "dueDate": "2026-03-01",
+      "status": "pending"
+    },
+    {
+      "id": "security-signoff",
+      "area": "security",
+      "owner": "Security Lead",
+      "dueDate": "2026-03-01",
+      "status": "pending"
+    },
+    {
+      "id": "legal-signoff",
+      "area": "legal",
+      "owner": "Legal Lead",
+      "dueDate": "2026-03-01",
+      "status": "pending"
+    },
+    {
+      "id": "support-signoff",
+      "area": "support",
+      "owner": "Support Lead",
+      "dueDate": "2026-03-01",
+      "status": "pending"
+    },
+    {
+      "id": "analytics-signoff",
+      "area": "analytics",
+      "owner": "Analytics Lead",
+      "dueDate": "2026-03-01",
+      "status": "pending"
+    }
+  ]
+}

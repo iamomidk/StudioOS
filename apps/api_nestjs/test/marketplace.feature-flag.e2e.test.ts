@@ -20,10 +20,16 @@ const baseEnv = {
   PAYMENT_WEBHOOK_DEMO_SECRET: 'webhook-secret-for-tests'
 };
 
-async function bootApp(featureEnabled: boolean): Promise<INestApplication> {
+async function bootApp(
+  featureEnabled: boolean,
+  options?: { publicLaunchEnabled?: boolean; rolloutPercentage?: number; killSwitch?: boolean }
+): Promise<INestApplication> {
   Object.assign(process.env, {
     ...baseEnv,
-    FEATURE_MARKETPLACE_ENABLED: String(featureEnabled)
+    FEATURE_MARKETPLACE_ENABLED: String(featureEnabled),
+    FEATURE_PUBLIC_LAUNCH_ENABLED: String(options?.publicLaunchEnabled ?? true),
+    PUBLIC_ROLLOUT_PERCENTAGE: String(options?.rolloutPercentage ?? 100),
+    PUBLIC_MODULES_GLOBAL_KILL_SWITCH: String(options?.killSwitch ?? false)
   });
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -111,6 +117,40 @@ void test('marketplace feature flag controls access and writes audit logs', asyn
   });
   assert.ok(audit);
 
+  const appKillSwitch = await bootApp(true, { killSwitch: true, rolloutPercentage: 100 });
+  const killSwitchServer = appKillSwitch.getHttpServer() as Parameters<typeof request>[0];
+  const loginKillSwitch = await request(killSwitchServer).post('/auth/login').send({
+    email: user.email,
+    password: 'Password123!'
+  });
+  const killSwitchToken = (loginKillSwitch.body as { accessToken: string }).accessToken;
+
+  const killSwitchSearch = await request(killSwitchServer)
+    .get(
+      `/marketplace/search?organizationId=${encodeURIComponent(organization.id)}&category=camera`
+    )
+    .set('Authorization', `Bearer ${killSwitchToken}`);
+  assert.equal(killSwitchSearch.status, 404);
+
+  const appRolloutDisabled = await bootApp(true, {
+    publicLaunchEnabled: true,
+    rolloutPercentage: 0,
+    killSwitch: false
+  });
+  const rolloutDisabledServer = appRolloutDisabled.getHttpServer() as Parameters<typeof request>[0];
+  const loginRolloutDisabled = await request(rolloutDisabledServer).post('/auth/login').send({
+    email: user.email,
+    password: 'Password123!'
+  });
+  const rolloutDisabledToken = (loginRolloutDisabled.body as { accessToken: string }).accessToken;
+
+  const rolloutDisabledSearch = await request(rolloutDisabledServer)
+    .get(
+      `/marketplace/search?organizationId=${encodeURIComponent(organization.id)}&category=camera`
+    )
+    .set('Authorization', `Bearer ${rolloutDisabledToken}`);
+  assert.equal(rolloutDisabledSearch.status, 404);
+
   await prismaEnabled.auditLog.deleteMany({ where: { organizationId: organization.id } });
   await prismaEnabled.asset.deleteMany({ where: { organizationId: organization.id } });
   await prismaEnabled.membership.deleteMany({ where: { organizationId: organization.id } });
@@ -119,5 +159,7 @@ void test('marketplace feature flag controls access and writes audit logs', asyn
   await prismaEnabled.organization.delete({ where: { id: organization.id } });
 
   await appEnabled.close();
+  await appKillSwitch.close();
+  await appRolloutDisabled.close();
   process.env = previousEnv;
 });

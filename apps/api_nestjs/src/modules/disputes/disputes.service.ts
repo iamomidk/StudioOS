@@ -28,21 +28,34 @@ export class DisputesService {
     private readonly config: AppConfigService
   ) {}
 
-  private assertEnabled() {
+  private async assertEnabled(organizationId: string) {
     if (!this.config.featureDisputesEnabled) {
       throw new NotFoundException('Disputes feature is disabled');
     }
+
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { pilotCohortId: true }
+    });
+
+    if (!organization) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    if (!this.config.isPublicRolloutEnabledFor(organizationId, organization.pilotCohortId)) {
+      throw new NotFoundException('Disputes feature is not enabled for this organization');
+    }
   }
 
-  list(organizationId: string) {
-    this.assertEnabled();
+  async list(organizationId: string) {
+    await this.assertEnabled(organizationId);
     return [...this.disputes.values()].filter(
       (dispute) => dispute.organizationId === organizationId
     );
   }
 
   async create(dto: CreateDisputeDto, actor?: AccessClaims) {
-    this.assertEnabled();
+    await this.assertEnabled(dto.organizationId);
 
     const now = new Date().toISOString();
     const dispute: DisputeRecord = {
@@ -82,7 +95,7 @@ export class DisputesService {
     status: DisputeStatus,
     actor?: AccessClaims
   ) {
-    this.assertEnabled();
+    await this.assertEnabled(organizationId);
 
     const dispute = this.disputes.get(disputeId);
     if (!dispute || dispute.organizationId !== organizationId) {

@@ -17,6 +17,19 @@ export class MarketplaceService {
       throw new NotFoundException('Marketplace search is disabled');
     }
 
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: query.organizationId },
+      select: { pilotCohortId: true }
+    });
+
+    if (!organization) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    if (!this.config.isPublicRolloutEnabledFor(query.organizationId, organization.pilotCohortId)) {
+      throw new NotFoundException('Marketplace search is not enabled for this organization');
+    }
+
     const assets = await this.prisma.asset.findMany({
       where: {
         organizationId: query.organizationId,

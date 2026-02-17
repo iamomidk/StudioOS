@@ -43,6 +43,12 @@ const envSchema = z.object({
   SMOKE_CHECK_TOKEN: z.string().default(''),
   FEATURE_MARKETPLACE_ENABLED: booleanFromEnv.default(false),
   FEATURE_DISPUTES_ENABLED: booleanFromEnv.default(false),
+  FEATURE_PUBLIC_LAUNCH_ENABLED: booleanFromEnv.default(false),
+  PUBLIC_MODULES_GLOBAL_KILL_SWITCH: booleanFromEnv.default(false),
+  PUBLIC_ROLLOUT_ALLOWLIST_ORG_IDS: z.string().default(''),
+  PUBLIC_ROLLOUT_ALLOWLIST_COHORT_IDS: z.string().default(''),
+  PUBLIC_ROLLOUT_PERCENTAGE: z.coerce.number().int().min(0).max(100).default(0),
+  PUBLIC_ROLLOUT_HASH_SALT: z.string().min(1).default('studioos-public-rollout-v1'),
   FEATURE_PRICING_EXPERIMENTS_ENABLED: booleanFromEnv.default(false),
   PRICING_EXPERIMENTS_GLOBAL_KILL_SWITCH: booleanFromEnv.default(false),
   ONBOARDING_STEPS: z

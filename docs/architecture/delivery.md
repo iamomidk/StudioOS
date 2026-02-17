@@ -14,3 +14,5 @@ Task 37 baseline pipeline in GitHub Actions:
 - `.github/workflows/critical-e2e.yml`
 - `.github/workflows/openapi-drift.yml`
 - `.github/workflows/security-audit.yml`
+- `.github/workflows/release-readiness.yml`
+- `.github/workflows/post-launch-review.yml`
