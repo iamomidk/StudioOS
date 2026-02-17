@@ -30,6 +30,7 @@ This document lists baseline environment variables for each app and service in S
 | `ALERT_ROUTING_KEY` | No | `` | Optional alert routing key/token header value for webhook-based routing. |
 | `FEATURE_MARKETPLACE_ENABLED` | No | `false` | Enables marketplace search API feature skeleton. |
 | `FEATURE_DISPUTES_ENABLED` | No | `false` | Enables disputes module API feature skeleton. |
+| `DISPUTE_POLICY_VERSION` | No | `v1` | Policy version tag applied to new dispute automation decisions. |
 | `FEATURE_PUBLIC_LAUNCH_ENABLED` | No | `false` | Master switch for controlled public module rollout. |
 | `PUBLIC_MODULES_GLOBAL_KILL_SWITCH` | No | `false` | Emergency global kill switch for public modules behind rollout controls. |
 | `PUBLIC_ROLLOUT_ALLOWLIST_ORG_IDS` | No | `` | Comma-separated org IDs enabled regardless of percentage rollout. |

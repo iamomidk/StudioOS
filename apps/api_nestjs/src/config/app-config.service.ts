@@ -101,6 +101,10 @@ export class AppConfigService {
     return this.env.FEATURE_DISPUTES_ENABLED;
   }
 
+  get disputePolicyVersion(): string {
+    return this.env.DISPUTE_POLICY_VERSION;
+  }
+
   get featurePublicLaunchEnabled(): boolean {
     return this.env.FEATURE_PUBLIC_LAUNCH_ENABLED;
   }

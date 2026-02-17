@@ -44,6 +44,7 @@ const envSchema = z.object({
   SMOKE_CHECK_TOKEN: z.string().default(''),
   FEATURE_MARKETPLACE_ENABLED: booleanFromEnv.default(false),
   FEATURE_DISPUTES_ENABLED: booleanFromEnv.default(false),
+  DISPUTE_POLICY_VERSION: z.string().default('v1'),
   FEATURE_PUBLIC_LAUNCH_ENABLED: booleanFromEnv.default(false),
   PUBLIC_MODULES_GLOBAL_KILL_SWITCH: booleanFromEnv.default(false),
   PUBLIC_ROLLOUT_ALLOWLIST_ORG_IDS: z.string().default(''),
