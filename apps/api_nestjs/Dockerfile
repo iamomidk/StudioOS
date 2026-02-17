@@ -17,6 +17,8 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
+RUN pnpm --filter @studioos/apps-api_nestjs prisma:generate
+
 RUN pnpm --filter @studioos/apps-api_nestjs build
 
 FROM node:22-bookworm-slim AS runtime
