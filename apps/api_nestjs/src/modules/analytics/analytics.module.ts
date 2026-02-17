@@ -10,17 +10,30 @@ import { OnboardingFunnelController } from './onboarding-funnel.controller.js';
 import { OnboardingFunnelService } from './onboarding-funnel.service.js';
 import { PricingExperimentsController } from './pricing-experiments.controller.js';
 import { PricingExperimentsService } from './pricing-experiments.service.js';
+import { RoadmapInstrumentationController } from './roadmap.controller.js';
+import { RoadmapInstrumentationService } from './roadmap.service.js';
 
 @Module({
   imports: [ConfigModule, PrismaModule],
-  controllers: [AnalyticsController, PricingExperimentsController, OnboardingFunnelController],
+  controllers: [
+    AnalyticsController,
+    PricingExperimentsController,
+    OnboardingFunnelController,
+    RoadmapInstrumentationController
+  ],
   providers: [
     AnalyticsService,
     PricingExperimentsService,
     OnboardingFunnelService,
+    RoadmapInstrumentationService,
     AccessTokenGuard,
     RolesGuard
   ],
-  exports: [AnalyticsService, PricingExperimentsService, OnboardingFunnelService]
+  exports: [
+    AnalyticsService,
+    PricingExperimentsService,
+    OnboardingFunnelService,
+    RoadmapInstrumentationService
+  ]
 })
 export class AnalyticsModule {}

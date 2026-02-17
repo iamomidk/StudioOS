@@ -300,6 +300,16 @@ enum SettlementPayoutStatus {
   failed
 }
 
+enum StrategicMetricKind {
+  north_star
+  leading_indicator
+}
+
+enum StrategicDefinitionStatus {
+  active
+  archived
+}
+
 enum PartnerCredentialStatus {
   active
   suspended
@@ -347,6 +357,7 @@ model User {
   moderationAppealsRequested      ModerationAppeal[]
   moderationAbuseReports          ModerationAbuseReport[]
   settlementStatementsApproved    SettlementStatement[]
+  strategicMetricVersionsApproved StrategicMetricDefinitionVersion[]
 }
 
 model RefreshToken {
@@ -430,6 +441,8 @@ model Organization {
   settlementAdjustmentEntries SettlementAdjustmentEntry[]
   settlementStatements        SettlementStatement[]
   settlementPayouts           SettlementPayoutInstruction[]
+  strategicMetricDefinitions  StrategicMetricDefinition[]
+  strategicScorecards         StrategicScorecard[]
 }
 
 model Membership {
@@ -1850,4 +1863,93 @@ model SettlementPayoutInstruction {
   organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, status, createdAt])
+}
+
+model StrategicMetricDefinition {
+  id             String                   @id @default(cuid())
+  organizationId String
+  metricKey      String
+  title          String
+  kind           StrategicMetricKind
+  owner          String
+  guardrail      String?
+  status         StrategicDefinitionStatus @default(active)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  organization   Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  versions       StrategicMetricDefinitionVersion[]
+  scorecardMetrics StrategicScorecardMetric[]
+
+  @@unique([organizationId, metricKey])
+  @@index([organizationId, kind, status, createdAt])
+}
+
+model StrategicMetricDefinitionVersion {
+  id               String                   @id @default(cuid())
+  definitionId     String
+  versionNumber    Int
+  formula          String
+  targetValue      Float
+  changeReason     String?
+  approvedByUserId String?
+  createdAt        DateTime                 @default(now())
+  definition       StrategicMetricDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  approvedBy       User?                    @relation(fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  scorecardMetrics StrategicScorecardMetric[]
+
+  @@unique([definitionId, versionNumber])
+  @@index([definitionId, createdAt])
+}
+
+model StrategicScorecard {
+  id                String                 @id @default(cuid())
+  organizationId    String
+  frequency         String
+  periodStart       DateTime
+  periodEnd         DateTime
+  generatedAt       DateTime               @default(now())
+  northStarMetricKey String
+  onTrack           Boolean                @default(true)
+  confidence        Float                  @default(0.5)
+  summary           Json?
+  organization      Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  metrics           StrategicScorecardMetric[]
+
+  @@index([organizationId, frequency, generatedAt])
+}
+
+model StrategicScorecardMetric {
+  id                  String                        @id @default(cuid())
+  scorecardId         String
+  definitionId        String
+  definitionVersionId String
+  metricKey           String
+  value               Float
+  targetValue         Float
+  variance            Float
+  confidence          Float
+  anomaly             Boolean                       @default(false)
+  commentary          String?
+  createdAt           DateTime                      @default(now())
+  scorecard           StrategicScorecard            @relation(fields: [scorecardId], references: [id], onDelete: Cascade)
+  definition          StrategicMetricDefinition     @relation(fields: [definitionId], references: [id], onDelete: Restrict)
+  definitionVersion   StrategicMetricDefinitionVersion @relation(fields: [definitionVersionId], references: [id], onDelete: Restrict)
+  experimentImpacts   StrategicExperimentImpact[]
+
+  @@index([scorecardId, metricKey])
+  @@index([definitionId, createdAt])
+}
+
+model StrategicExperimentImpact {
+  id                String                 @id @default(cuid())
+  scorecardMetricId String
+  experimentId      String
+  preWindowValue    Float
+  postWindowValue   Float
+  deltaValue        Float
+  notes             String?
+  createdAt         DateTime               @default(now())
+  scorecardMetric   StrategicScorecardMetric @relation(fields: [scorecardMetricId], references: [id], onDelete: Cascade)
+
+  @@index([scorecardMetricId, experimentId])
 }

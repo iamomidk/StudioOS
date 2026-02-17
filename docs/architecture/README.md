@@ -34,3 +34,4 @@ Additional operations/release docs live outside the architecture package:
 - `../legal/contract-lifecycle-automation.md`: Contract templates, approval/signature lifecycle, amendments, and renewal schedule automation baseline.
 - `../trust-safety/moderation-stack.md`: Trust and safety policy registry, moderation workflow, appeals, sanctions, and analytics metrics payloads.
 - `../finance/partner-revenue-settlement.md`: Partner settlement agreements, accrual/adjustment/payout lifecycle, and reconciliation reporting.
+- `../strategy/roadmap-instrumentation.md`: North-star and leading-indicator framework, scorecards, variance analysis, and experiment linkage.
