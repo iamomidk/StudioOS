@@ -11,3 +11,4 @@
 Additional operations/release docs live outside the architecture package:
 
 - `../release/release-readiness.md`: RC gate runner, artifact schema, and CI usage.
+- `../ops/smoke-tests.md`: Post-deploy smoke suite, required env, and cleanup behavior.

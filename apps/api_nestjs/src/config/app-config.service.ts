@@ -80,6 +80,14 @@ export class AppConfigService {
     return this.env.OTEL_ENABLED;
   }
 
+  get smokeOpsEnabled(): boolean {
+    return this.env.SMOKE_OPS_ENABLED;
+  }
+
+  get smokeCheckToken(): string {
+    return this.env.SMOKE_CHECK_TOKEN;
+  }
+
   get featureMarketplaceEnabled(): boolean {
     return this.env.FEATURE_MARKETPLACE_ENABLED;
   }

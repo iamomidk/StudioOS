@@ -23,6 +23,8 @@ This document lists baseline environment variables for each app and service in S
 | `RATE_LIMIT_MAX_REQUESTS` | No | `120` | Maximum requests per client IP within a rate-limit window. |
 | `SENTRY_DSN` | No | `` | API Sentry DSN for runtime error reporting. |
 | `OTEL_ENABLED` | No | `false` | Enables API OpenTelemetry runtime hooks/logging. |
+| `SMOKE_OPS_ENABLED` | No | `false` | Enables token-gated smoke-only API endpoints (`/health/workers`, `/health/queue-smoke`, `/health/smoke-cleanup`). |
+| `SMOKE_CHECK_TOKEN` | No | `change-me-smoke-token` | Shared token expected in `x-smoke-token` header for smoke-only API endpoints. |
 | `FEATURE_MARKETPLACE_ENABLED` | No | `false` | Enables marketplace search API feature skeleton. |
 | `FEATURE_DISPUTES_ENABLED` | No | `false` | Enables disputes module API feature skeleton. |
 
@@ -70,3 +72,17 @@ This document lists baseline environment variables for each app and service in S
 ## Fail-fast behavior
 
 `apps/api_nestjs` performs schema validation at bootstrap. Missing required variables abort startup with a non-zero exit code.
+
+## Smoke runner (release ops)
+
+`pnpm smoke:test` expects these process env vars at runtime:
+
+| Variable | Required | Example | Notes |
+| --- | --- | --- | --- |
+| `SMOKE_BASE_URL_API` | Yes | `https://staging-api.example.com` | Remote API base URL used by smoke checks. |
+| `SMOKE_BASE_URL_WEB` | Yes | `https://staging.example.com` | Remote web base URL used by smoke checks. |
+| `SMOKE_USER_EMAIL` | Yes | `smoke-user@example.com` | Dedicated smoke user login identifier. |
+| `SMOKE_USER_PASSWORD` | Yes | `change-me-smoke-password` | Dedicated smoke user password (set via secret manager, never committed). |
+| `SMOKE_ORG_ID` | Yes | `org_smoke_123` | Dedicated smoke organization/tenant id. |
+| `SMOKE_CHECK_TOKEN` | Yes | `change-me-smoke-token` | Token passed as `x-smoke-token` to protected smoke endpoints. |
+| `SMOKE_TIMEOUT_MS` | No | `300000` | Global smoke timeout budget (default 300000ms / 5 minutes). |

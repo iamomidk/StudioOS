@@ -39,6 +39,8 @@ const envSchema = z.object({
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().min(1).default(120),
   SENTRY_DSN: z.string().default(''),
   OTEL_ENABLED: booleanFromEnv.default(false),
+  SMOKE_OPS_ENABLED: booleanFromEnv.default(false),
+  SMOKE_CHECK_TOKEN: z.string().default(''),
   FEATURE_MARKETPLACE_ENABLED: booleanFromEnv.default(false),
   FEATURE_DISPUTES_ENABLED: booleanFromEnv.default(false)
 });

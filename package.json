@@ -13,7 +13,8 @@
     "commitlint": "commitlint --edit",
     "openapi:sync": "pnpm --filter @studioos/packages-api_contracts_openapi sync",
     "openapi:drift-check": "pnpm --filter @studioos/packages-api_contracts_openapi drift:check",
-    "rc:audit": "node scripts/rc-audit.mjs"
+    "rc:audit": "node scripts/rc-audit.mjs",
+    "smoke:test": "node scripts/smoke-test.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

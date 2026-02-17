@@ -74,6 +74,39 @@ jobs:
       - name: Deploy workers to staging
         run: echo "Deploying workers to staging (placeholder)"
 
+  post-deploy-smoke:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: deploy_staging
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      SMOKE_BASE_URL_API: ${{ vars.SMOKE_BASE_URL_API }}
+      SMOKE_BASE_URL_WEB: ${{ vars.SMOKE_BASE_URL_WEB }}
+      SMOKE_USER_EMAIL: ${{ vars.SMOKE_USER_EMAIL }}
+      SMOKE_USER_PASSWORD: ${{ secrets.SMOKE_USER_PASSWORD }}
+      SMOKE_ORG_ID: ${{ vars.SMOKE_ORG_ID }}
+      SMOKE_CHECK_TOKEN: ${{ secrets.SMOKE_CHECK_TOKEN }}
+      SMOKE_TIMEOUT_MS: 300000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run post-deploy smoke checks
+        run: pnpm smoke:test
+      - name: Upload smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-report
+          path: artifacts/smoke/*
+          if-no-files-found: warn
+
   deploy_production:
     if: github.event_name == 'workflow_dispatch' && inputs.deploy_production == 'true'
     needs: quality
