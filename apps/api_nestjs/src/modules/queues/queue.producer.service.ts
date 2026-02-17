@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { MetricsService } from '../../common/modules/metrics/metrics.service.js';
 import { DEFAULT_JOB_OPTIONS, QUEUE_NAMES } from './queue.constants.js';
 import type {
   InvoiceReminderJobPayload,
@@ -14,19 +15,23 @@ export class QueueProducerService {
   constructor(
     @Inject(NOTIFICATIONS_QUEUE) private readonly notificationsQueue: QueuePort,
     @Inject(INVOICE_REMINDERS_QUEUE) private readonly invoiceRemindersQueue: QueuePort,
-    @Inject(MEDIA_JOBS_QUEUE) private readonly mediaJobsQueue: QueuePort
+    @Inject(MEDIA_JOBS_QUEUE) private readonly mediaJobsQueue: QueuePort,
+    private readonly metrics: MetricsService
   ) {}
 
-  enqueueNotification(payload: NotificationJobPayload): Promise<void> {
-    return this.notificationsQueue.add('notify-user', payload, DEFAULT_JOB_OPTIONS);
+  async enqueueNotification(payload: NotificationJobPayload): Promise<void> {
+    await this.notificationsQueue.add('notify-user', payload, DEFAULT_JOB_OPTIONS);
+    this.metrics.recordQueueEnqueued(QUEUE_NAMES.notifications);
   }
 
-  enqueueInvoiceReminder(payload: InvoiceReminderJobPayload): Promise<void> {
-    return this.invoiceRemindersQueue.add('send-invoice-reminder', payload, DEFAULT_JOB_OPTIONS);
+  async enqueueInvoiceReminder(payload: InvoiceReminderJobPayload): Promise<void> {
+    await this.invoiceRemindersQueue.add('send-invoice-reminder', payload, DEFAULT_JOB_OPTIONS);
+    this.metrics.recordQueueEnqueued(QUEUE_NAMES.invoiceReminders);
   }
 
-  enqueueMediaJob(payload: MediaJobPayload): Promise<void> {
-    return this.mediaJobsQueue.add('process-media', payload, DEFAULT_JOB_OPTIONS);
+  async enqueueMediaJob(payload: MediaJobPayload): Promise<void> {
+    await this.mediaJobsQueue.add('process-media', payload, DEFAULT_JOB_OPTIONS);
+    this.metrics.recordQueueEnqueued(QUEUE_NAMES.mediaJobs);
   }
 
   getQueueNames(): string[] {

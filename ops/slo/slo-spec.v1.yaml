@@ -1,0 +1,24 @@
+version: v1
+window: 30d
+slos:
+  api_availability:
+    target: 99.9
+    indicator: "1 - (http_errors_total / http_requests_total)"
+  api_p95_latency_read_ms:
+    target: 500
+    indicator: "histogram_quantile(0.95, studioos_api_read_latency_ms_bucket)"
+  api_p95_latency_write_ms:
+    target: 900
+    indicator: "histogram_quantile(0.95, studioos_api_write_latency_ms_bucket)"
+  webhook_success_rate:
+    target: 99.5
+    indicator: "studioos_webhook_processed_total / (studioos_webhook_processed_total + studioos_webhook_failed_total)"
+  queue_lag_notifications_seconds:
+    target: 60
+    indicator: "studioos_queue_lag_seconds{queue=\"notifications\"}"
+  queue_lag_media_seconds:
+    target: 300
+    indicator: "studioos_queue_lag_seconds{queue=\"media-jobs\"}"
+  worker_failure_rate_1h:
+    target: 2
+    indicator: "sum(worker_failure) / (sum(worker_success) + sum(worker_failure))"

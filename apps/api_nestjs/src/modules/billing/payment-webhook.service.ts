@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma, type PaymentStatus } from '@prisma/client';
 
+import { MetricsService } from '../../common/modules/metrics/metrics.service.js';
 import { AppConfigService } from '../../config/app-config.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { DemoPaymentProviderAdapter } from './payment-providers/demo-payment-provider.adapter.js';
@@ -20,127 +21,136 @@ export class PaymentWebhookService {
 
   constructor(
     private readonly prisma: PrismaService,
-    config: AppConfigService
+    config: AppConfigService,
+    private readonly metrics: MetricsService
   ) {
     const demoAdapter = new DemoPaymentProviderAdapter(config);
     this.adapters = new Map([[demoAdapter.provider, demoAdapter]]);
   }
 
   async handleWebhook(provider: string, signature: string | undefined, payload: string) {
-    const adapter = this.adapters.get(provider);
-    if (!adapter) {
-      throw new BadRequestException(`Unsupported payment provider: ${provider}`);
-    }
-
-    if (!adapter.verifySignature(signature, payload)) {
-      throw new UnauthorizedException('Invalid webhook signature');
-    }
-
-    const event = adapter.parseEvent(payload);
-
-    return this.prisma.$transaction(async (tx) => {
-      const existingEvent = await tx.paymentWebhookEvent.findUnique({
-        where: {
-          provider_eventId: {
-            provider: event.provider,
-            eventId: event.eventId
-          }
-        }
-      });
-
-      if (existingEvent) {
-        return {
-          status: 'duplicate',
-          eventId: existingEvent.eventId,
-          paymentId: existingEvent.paymentId
-        } as const;
+    try {
+      const adapter = this.adapters.get(provider);
+      if (!adapter) {
+        throw new BadRequestException(`Unsupported payment provider: ${provider}`);
       }
 
-      const invoice = await tx.invoice.findFirst({
-        where: {
-          id: event.invoiceId,
-          organizationId: event.organizationId
-        }
-      });
-      if (!invoice) {
-        throw new NotFoundException('Invoice not found');
+      if (!adapter.verifySignature(signature, payload)) {
+        throw new UnauthorizedException('Invalid webhook signature');
       }
 
-      const paymentStatus = this.mapEventToPaymentStatus(event.type);
-      const existingPayment = await tx.payment.findFirst({
-        where: {
-          organizationId: event.organizationId,
-          invoiceId: event.invoiceId,
-          provider: event.provider,
-          providerRef: event.providerRef
-        }
-      });
+      const event = adapter.parseEvent(payload);
 
-      const payment = existingPayment
-        ? await tx.payment.update({
-            where: { id: existingPayment.id },
-            data: {
-              amountCents: event.amountCents,
-              currency: event.currency,
-              status: paymentStatus,
-              paidAt: paymentStatus === 'succeeded' ? event.occurredAt : null
-            }
-          })
-        : await tx.payment.create({
-            data: {
-              organizationId: event.organizationId,
-              invoiceId: event.invoiceId,
+      const result = await this.prisma.$transaction(async (tx) => {
+        const existingEvent = await tx.paymentWebhookEvent.findUnique({
+          where: {
+            provider_eventId: {
               provider: event.provider,
-              providerRef: event.providerRef,
-              amountCents: event.amountCents,
-              currency: event.currency,
-              status: paymentStatus,
-              paidAt: paymentStatus === 'succeeded' ? event.occurredAt : null
+              eventId: event.eventId
             }
-          });
+          }
+        });
 
-      const nextInvoiceStatus = await this.computeInvoiceStatusFromPayments(
-        tx,
-        event.invoiceId,
-        invoice.totalCents
-      );
-      await tx.invoice.update({
-        where: { id: invoice.id },
-        data: { status: nextInvoiceStatus }
-      });
-
-      await tx.paymentWebhookEvent.create({
-        data: {
-          provider: event.provider,
-          eventId: event.eventId,
-          organizationId: event.organizationId,
-          invoiceId: event.invoiceId,
-          paymentId: payment.id,
-          payload: event.rawPayload as Prisma.InputJsonValue
+        if (existingEvent) {
+          return {
+            status: 'duplicate',
+            eventId: existingEvent.eventId,
+            paymentId: existingEvent.paymentId
+          } as const;
         }
-      });
 
-      await tx.auditLog.create({
-        data: {
-          organizationId: event.organizationId,
-          entityType: 'Payment',
-          entityId: payment.id,
-          action: 'payment.webhook.applied',
-          metadata: {
+        const invoice = await tx.invoice.findFirst({
+          where: {
+            id: event.invoiceId,
+            organizationId: event.organizationId
+          }
+        });
+        if (!invoice) {
+          throw new NotFoundException('Invoice not found');
+        }
+
+        const paymentStatus = this.mapEventToPaymentStatus(event.type);
+        const existingPayment = await tx.payment.findFirst({
+          where: {
+            organizationId: event.organizationId,
+            invoiceId: event.invoiceId,
+            provider: event.provider,
+            providerRef: event.providerRef
+          }
+        });
+
+        const payment = existingPayment
+          ? await tx.payment.update({
+              where: { id: existingPayment.id },
+              data: {
+                amountCents: event.amountCents,
+                currency: event.currency,
+                status: paymentStatus,
+                paidAt: paymentStatus === 'succeeded' ? event.occurredAt : null
+              }
+            })
+          : await tx.payment.create({
+              data: {
+                organizationId: event.organizationId,
+                invoiceId: event.invoiceId,
+                provider: event.provider,
+                providerRef: event.providerRef,
+                amountCents: event.amountCents,
+                currency: event.currency,
+                status: paymentStatus,
+                paidAt: paymentStatus === 'succeeded' ? event.occurredAt : null
+              }
+            });
+
+        const nextInvoiceStatus = await this.computeInvoiceStatusFromPayments(
+          tx,
+          event.invoiceId,
+          invoice.totalCents
+        );
+        await tx.invoice.update({
+          where: { id: invoice.id },
+          data: { status: nextInvoiceStatus }
+        });
+
+        await tx.paymentWebhookEvent.create({
+          data: {
             provider: event.provider,
             eventId: event.eventId,
-            eventType: event.type,
-            invoiceStatus: nextInvoiceStatus
+            organizationId: event.organizationId,
+            invoiceId: event.invoiceId,
+            paymentId: payment.id,
+            payload: event.rawPayload as Prisma.InputJsonValue
           }
-        }
+        });
+
+        await tx.auditLog.create({
+          data: {
+            organizationId: event.organizationId,
+            entityType: 'Payment',
+            entityId: payment.id,
+            action: 'payment.webhook.applied',
+            metadata: {
+              provider: event.provider,
+              eventId: event.eventId,
+              eventType: event.type,
+              invoiceStatus: nextInvoiceStatus
+            }
+          }
+        });
+
+        return {
+          status: 'processed',
+          eventId: event.eventId,
+          paymentId: payment.id
+        } as const;
       });
 
-      return {
-        status: 'processed',
-        eventId: event.eventId,
-        paymentId: payment.id
-      } as const;
-    });
+      this.metrics.recordWebhookProcessed(true);
+      return result;
+    } catch (error) {
+      this.metrics.recordWebhookProcessed(false);
+      throw error;
+    }
   }
 
   private mapEventToPaymentStatus(type: NormalizedPaymentWebhookEvent['type']): PaymentStatus {

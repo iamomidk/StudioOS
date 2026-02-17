@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { MetricsService } from '../src/common/modules/metrics/metrics.service.js';
 import { QUEUE_NAMES } from '../src/modules/queues/queue.constants.js';
 import { NotificationDispatchError } from '../src/modules/queues/notification-dispatch.service.js';
 import { QueueConsumerService } from '../src/modules/queues/queue.consumer.service.js';
@@ -35,7 +36,8 @@ function buildConsumer(behavior: 'ok' | 'transient' | 'permanent') {
   const deadLetterQueue = new FakeDeadLetterQueue();
   const consumer = new QueueConsumerService(
     new FakeNotificationDispatchService(behavior) as never,
-    deadLetterQueue
+    deadLetterQueue,
+    new MetricsService()
   );
 
   return { consumer, deadLetterQueue };

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { MetricsService } from '../src/common/modules/metrics/metrics.service.js';
 import { DEFAULT_JOB_OPTIONS } from '../src/modules/queues/queue.constants.js';
 import type { QueuePort } from '../src/modules/queues/queue.port.js';
 import { QueueProducerService } from '../src/modules/queues/queue.producer.service.js';
@@ -25,7 +26,12 @@ void test('QueueProducerService enqueues notification job with retry/backoff def
   const remindersQueue = new FakeQueue();
   const mediaQueue = new FakeQueue();
 
-  const producer = new QueueProducerService(notificationsQueue, remindersQueue, mediaQueue);
+  const producer = new QueueProducerService(
+    notificationsQueue,
+    remindersQueue,
+    mediaQueue,
+    new MetricsService()
+  );
 
   await producer.enqueueNotification({
     recipientUserId: 'user-1',

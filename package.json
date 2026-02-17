@@ -14,7 +14,8 @@
     "openapi:sync": "pnpm --filter @studioos/packages-api_contracts_openapi sync",
     "openapi:drift-check": "pnpm --filter @studioos/packages-api_contracts_openapi drift:check",
     "rc:audit": "node scripts/rc-audit.mjs",
-    "smoke:test": "node scripts/smoke-test.mjs"
+    "smoke:test": "node scripts/smoke-test.mjs",
+    "slo:synthetic-check": "node scripts/slo-synthetic-check.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

@@ -1,0 +1,31 @@
+groups:
+  - name: studioos-slo-fast-burn
+    interval: 30s
+    rules:
+      - alert: StudioOSApiAvailabilityFastBurn
+        expr: (1 - (studioos_http_errors_total / clamp_min(studioos_http_requests_total, 1))) < 0.995
+        for: 10m
+        labels:
+          severity: critical
+          burn: fast
+          service: api
+        annotations:
+          summary: API availability fast-burn breach
+      - alert: StudioOSWebhookSuccessFastBurn
+        expr: (studioos_webhook_processed_total / clamp_min(studioos_webhook_processed_total + studioos_webhook_failed_total, 1)) < 0.99
+        for: 10m
+        labels:
+          severity: critical
+          burn: fast
+          service: webhook
+        annotations:
+          summary: Webhook success fast-burn breach
+      - alert: StudioOSQueueLagNotificationsFastBurn
+        expr: studioos_queue_lag_seconds{queue="notifications"} > 60
+        for: 5m
+        labels:
+          severity: critical
+          burn: fast
+          service: queue
+        annotations:
+          summary: Notifications queue lag above 60s

@@ -1,0 +1,24 @@
+{
+  "title": "StudioOS Queue Health",
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "browser",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Queue Depth",
+      "targets": [
+        { "expr": "studioos_queue_depth", "legendFormat": "{{queue}}" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Queue Lag (s)",
+      "targets": [
+        { "expr": "studioos_queue_lag_seconds", "legendFormat": "{{queue}}" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    }
+  ]
+}

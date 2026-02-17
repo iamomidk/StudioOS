@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
 
+import { MetricsService } from '../../common/modules/metrics/metrics.service.js';
 import { DEFAULT_JOB_OPTIONS, QUEUE_NAMES, type QueueName } from './queue.constants.js';
 import {
   NotificationDispatchError,
@@ -22,21 +23,33 @@ export class QueueConsumerService {
   constructor(
     private readonly notifications: NotificationDispatchService,
     @Inject(NOTIFICATIONS_DEAD_LETTER_QUEUE)
-    private readonly notificationsDeadLetterQueue: QueuePort
+    private readonly notificationsDeadLetterQueue: QueuePort,
+    private readonly metrics: MetricsService
   ) {}
 
-  process(queueName: QueueName, job: Job): Promise<void> {
-    switch (queueName) {
-      case QUEUE_NAMES.notifications:
-        return this.processNotification(job as Job<NotificationJobPayload>);
-      case QUEUE_NAMES.notificationsDeadLetter:
-        return this.processDeadLetterNotification(job as Job<DeadLetterNotificationJobPayload>);
-      case QUEUE_NAMES.invoiceReminders:
-        return this.processInvoiceReminder(job as Job<InvoiceReminderJobPayload>);
-      case QUEUE_NAMES.mediaJobs:
-        return this.processMediaJob(job as Job<MediaJobPayload>);
-      default:
-        return Promise.reject(new Error(`Unsupported queue: ${queueName as string}`));
+  async process(queueName: QueueName, job: Job): Promise<void> {
+    try {
+      switch (queueName) {
+        case QUEUE_NAMES.notifications:
+          await this.processNotification(job as Job<NotificationJobPayload>);
+          break;
+        case QUEUE_NAMES.notificationsDeadLetter:
+          await this.processDeadLetterNotification(job as Job<DeadLetterNotificationJobPayload>);
+          break;
+        case QUEUE_NAMES.invoiceReminders:
+          await this.processInvoiceReminder(job as Job<InvoiceReminderJobPayload>);
+          break;
+        case QUEUE_NAMES.mediaJobs:
+          await this.processMediaJob(job as Job<MediaJobPayload>);
+          break;
+        default:
+          throw new Error(`Unsupported queue: ${queueName as string}`);
+      }
+
+      this.metrics.recordQueueProcessed(queueName, true);
+    } catch (error) {
+      this.metrics.recordQueueProcessed(queueName, false);
+      throw error;
     }
   }
 

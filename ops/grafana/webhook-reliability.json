@@ -1,0 +1,27 @@
+{
+  "title": "StudioOS Webhook Reliability",
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "browser",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Webhook Success Rate %",
+      "targets": [
+        {
+          "expr": "100 * (studioos_webhook_processed_total / clamp_min(studioos_webhook_processed_total + studioos_webhook_failed_total, 1))",
+          "legendFormat": "success rate"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Webhook Failures",
+      "targets": [
+        { "expr": "studioos_webhook_failed_total", "legendFormat": "failed" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    }
+  ]
+}

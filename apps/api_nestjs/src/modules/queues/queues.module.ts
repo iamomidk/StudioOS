@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { Queue, type ConnectionOptions } from 'bullmq';
 
+import { MetricsModule } from '../../common/modules/metrics/metrics.module.js';
 import { AppConfigService } from '../../config/app-config.service.js';
 import { ConfigModule } from '../../config/config.module.js';
 import { BullMqQueueAdapter } from './bullmq-queue.adapter.js';
@@ -65,7 +66,7 @@ function createQueueAdapter(
 }
 
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, MetricsModule],
   providers: [
     {
       provide: NOTIFICATIONS_QUEUE,

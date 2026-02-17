@@ -1,0 +1,24 @@
+{
+  "title": "StudioOS Worker Reliability",
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "browser",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Worker Success Jobs",
+      "targets": [
+        { "expr": "studioos_worker_jobs_total{status=\"success\"}", "legendFormat": "{{worker}}" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Worker Failure Jobs",
+      "targets": [
+        { "expr": "studioos_worker_jobs_total{status=\"failure\"}", "legendFormat": "{{worker}}" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    }
+  ]
+}

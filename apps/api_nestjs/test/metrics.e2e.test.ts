@@ -19,8 +19,14 @@ test.before(async () => {
 
   app = moduleRef.createNestApplication();
   metricsService = app.get(MetricsService);
-  metricsService.recordRequest(200);
-  metricsService.recordRequest(503);
+  metricsService.recordRequest(200, 120, 'GET');
+  metricsService.recordRequest(503, 950, 'POST');
+  metricsService.recordQueueEnqueued('notifications');
+  metricsService.recordQueueProcessed('notifications', true);
+  metricsService.recordQueueEnqueued('media-jobs');
+  metricsService.recordQueueProcessed('media-jobs', false);
+  metricsService.recordWebhookProcessed(true);
+  metricsService.recordWebhookProcessed(false);
   await app.init();
 });
 
@@ -35,4 +41,10 @@ void test('GET /metrics returns prometheus counters', async () => {
   assert.equal(response.status, 200);
   assert.match(response.text, /studioos_http_requests_total 2/);
   assert.match(response.text, /studioos_http_errors_total 1/);
+  assert.match(response.text, /studioos_api_read_latency_ms_count 1/);
+  assert.match(response.text, /studioos_api_write_latency_ms_count 1/);
+  assert.match(response.text, /studioos_queue_depth\{queue="notifications"\} 0/);
+  assert.match(response.text, /studioos_webhook_processed_total 1/);
+  assert.match(response.text, /studioos_webhook_failed_total 1/);
+  assert.match(response.text, /studioos_worker_jobs_total\{worker="media",status="failure"\} 1/);
 });

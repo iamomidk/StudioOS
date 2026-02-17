@@ -1,0 +1,35 @@
+groups:
+  - name: studioos-slo-slow-burn
+    interval: 1m
+    rules:
+      - alert: StudioOSApiAvailabilitySlowBurn
+        expr: (1 - (studioos_http_errors_total / clamp_min(studioos_http_requests_total, 1))) < 0.999
+        for: 3h
+        labels:
+          severity: warning
+          burn: slow
+          service: api
+        annotations:
+          summary: API availability slow-burn breach
+      - alert: StudioOSMediaQueueLagSlowBurn
+        expr: studioos_queue_lag_seconds{queue="media-jobs"} > 300
+        for: 1h
+        labels:
+          severity: warning
+          burn: slow
+          service: queue
+        annotations:
+          summary: Media queue lag above 300s
+      - alert: StudioOSWorkerFailureRateSlowBurn
+        expr: (
+          sum(studioos_worker_jobs_total{status="failure"})
+          /
+          clamp_min(sum(studioos_worker_jobs_total), 1)
+        ) > 0.02
+        for: 1h
+        labels:
+          severity: warning
+          burn: slow
+          service: worker
+        annotations:
+          summary: Worker failure rate above 2% over rolling window

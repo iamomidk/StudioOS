@@ -25,6 +25,8 @@ This document lists baseline environment variables for each app and service in S
 | `OTEL_ENABLED` | No | `false` | Enables API OpenTelemetry runtime hooks/logging. |
 | `SMOKE_OPS_ENABLED` | No | `false` | Enables token-gated smoke-only API endpoints (`/health/workers`, `/health/queue-smoke`, `/health/smoke-cleanup`). |
 | `SMOKE_CHECK_TOKEN` | No | `change-me-smoke-token` | Shared token expected in `x-smoke-token` header for smoke-only API endpoints. |
+| `ALERT_WEBHOOK_URL` | No | `` | Alert destination webhook endpoint for SLO alert routing/integration checks. |
+| `ALERT_ROUTING_KEY` | No | `` | Optional alert routing key/token header value for webhook-based routing. |
 | `FEATURE_MARKETPLACE_ENABLED` | No | `false` | Enables marketplace search API feature skeleton. |
 | `FEATURE_DISPUTES_ENABLED` | No | `false` | Enables disputes module API feature skeleton. |
 
