@@ -278,6 +278,28 @@ enum ModerationSanctionStatus {
   revoked
 }
 
+enum SettlementPartnerStatus {
+  active
+  paused
+  terminated
+}
+
+enum SettlementPeriodStatus {
+  draft
+  review
+  approved
+  paid
+  reconciled
+  on_hold
+}
+
+enum SettlementPayoutStatus {
+  pending
+  on_hold
+  paid
+  failed
+}
+
 enum PartnerCredentialStatus {
   active
   suspended
@@ -324,6 +346,7 @@ model User {
   moderationDecisions             ModerationDecision[]
   moderationAppealsRequested      ModerationAppeal[]
   moderationAbuseReports          ModerationAbuseReport[]
+  settlementStatementsApproved    SettlementStatement[]
 }
 
 model RefreshToken {
@@ -400,6 +423,13 @@ model Organization {
   moderationCases             ModerationCase[]
   moderationSanctions         ModerationSanction[]
   moderationAbuseReports      ModerationAbuseReport[]
+  settlementPartners          SettlementPartner[]
+  settlementAgreements        SettlementAgreement[]
+  settlementPeriods           SettlementPeriod[]
+  settlementAccrualEntries    SettlementAccrualEntry[]
+  settlementAdjustmentEntries SettlementAdjustmentEntry[]
+  settlementStatements        SettlementStatement[]
+  settlementPayouts           SettlementPayoutInstruction[]
 }
 
 model Membership {
@@ -1669,4 +1699,155 @@ model ModerationAbuseReport {
 
   @@index([organizationId, createdAt])
   @@index([entityType, entityId, createdAt])
+}
+
+model SettlementPartner {
+  id             String                @id @default(cuid())
+  organizationId String
+  name           String
+  externalRef    String?
+  status         SettlementPartnerStatus @default(active)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agreements     SettlementAgreement[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId, status, createdAt])
+}
+
+model SettlementAgreement {
+  id                   String                @id @default(cuid())
+  organizationId       String
+  partnerId            String
+  status               SettlementPartnerStatus @default(active)
+  startsAt             DateTime
+  endsAt               DateTime?
+  currency             String                @default("USD")
+  minimumGuaranteeCents Int                 @default(0)
+  clawbackEnabled      Boolean               @default(false)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  partner              SettlementPartner     @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  rules                SettlementRevenueShareRule[]
+  periods              SettlementPeriod[]
+
+  @@index([organizationId, status, createdAt])
+}
+
+model SettlementRevenueShareRule {
+  id              String              @id @default(cuid())
+  agreementId     String
+  productCategory String
+  shareBps        Int
+  tierConfig      Json?
+  minCents        Int                 @default(0)
+  maxCents        Int?
+  createdAt       DateTime            @default(now())
+  agreement       SettlementAgreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+
+  @@index([agreementId, productCategory, createdAt])
+}
+
+model SettlementPeriod {
+  id             String               @id @default(cuid())
+  organizationId String
+  agreementId    String
+  periodStart    DateTime
+  periodEnd      DateTime
+  status         SettlementPeriodStatus @default(draft)
+  holdReason     String?
+  reviewedAt     DateTime?
+  approvedAt     DateTime?
+  reconciledAt   DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agreement      SettlementAgreement  @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  accrualEntries SettlementAccrualEntry[]
+  adjustmentEntries SettlementAdjustmentEntry[] @relation("SettlementAdjustmentBasePeriod")
+  appliedAdjustments SettlementAdjustmentEntry[] @relation("SettlementAdjustmentAppliedPeriod")
+  statement      SettlementStatement?
+  payout         SettlementPayoutInstruction?
+
+  @@index([organizationId, status, periodStart, periodEnd])
+}
+
+model SettlementAccrualEntry {
+  id              String            @id @default(cuid())
+  periodId        String
+  organizationId  String
+  sourceEntityType String
+  sourceEntityId  String
+  grossCents      Int
+  netCents        Int
+  feeCents        Int               @default(0)
+  taxCents        Int               @default(0)
+  chargebackCents Int               @default(0)
+  partnerShareCents Int
+  currency        String            @default("USD")
+  createdAt       DateTime          @default(now())
+  period          SettlementPeriod  @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([periodId, createdAt])
+  @@index([organizationId, sourceEntityType, sourceEntityId])
+}
+
+model SettlementAdjustmentEntry {
+  id               String            @id @default(cuid())
+  periodId         String
+  organizationId   String
+  amountCents      Int
+  reasonCode       String
+  note             String?
+  carryForward     Boolean           @default(false)
+  appliedToPeriodId String?
+  createdAt        DateTime          @default(now())
+  period           SettlementPeriod  @relation("SettlementAdjustmentBasePeriod", fields: [periodId], references: [id], onDelete: Cascade)
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  appliedToPeriod  SettlementPeriod? @relation("SettlementAdjustmentAppliedPeriod", fields: [appliedToPeriodId], references: [id], onDelete: SetNull)
+
+  @@index([periodId, createdAt])
+  @@index([organizationId, carryForward, appliedToPeriodId])
+}
+
+model SettlementStatement {
+  id                  String             @id @default(cuid())
+  periodId            String             @unique
+  organizationId      String
+  totalAccruedCents   Int
+  totalAdjustmentsCents Int
+  totalPayableCents   Int
+  snapshot            Json
+  approvedByUserId    String?
+  approvedAt          DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  period              SettlementPeriod   @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  approvedBy          User?              @relation(fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  payout              SettlementPayoutInstruction?
+
+  @@index([organizationId, createdAt])
+}
+
+model SettlementPayoutInstruction {
+  id              String              @id @default(cuid())
+  periodId        String              @unique
+  statementId     String?             @unique
+  organizationId  String
+  amountCents     Int
+  currency        String              @default("USD")
+  status          SettlementPayoutStatus @default(pending)
+  payoutReference String?
+  paidAt          DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  period          SettlementPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  statement       SettlementStatement? @relation(fields: [statementId], references: [id], onDelete: SetNull)
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status, createdAt])
 }

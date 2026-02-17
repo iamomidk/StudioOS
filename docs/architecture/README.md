@@ -33,3 +33,4 @@ Additional operations/release docs live outside the architecture package:
 - `../billing/enterprise-billing-orchestration.md`: Enterprise plan/subscription/metering orchestration with proration, true-up, and auditable adjustments.
 - `../legal/contract-lifecycle-automation.md`: Contract templates, approval/signature lifecycle, amendments, and renewal schedule automation baseline.
 - `../trust-safety/moderation-stack.md`: Trust and safety policy registry, moderation workflow, appeals, sanctions, and analytics metrics payloads.
+- `../finance/partner-revenue-settlement.md`: Partner settlement agreements, accrual/adjustment/payout lifecycle, and reconciliation reporting.

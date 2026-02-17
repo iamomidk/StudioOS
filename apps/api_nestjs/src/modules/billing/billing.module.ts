@@ -14,6 +14,8 @@ import { EnterpriseBillingController } from './enterprise-billing.controller.js'
 import { EnterpriseBillingService } from './enterprise-billing.service.js';
 import { PaymentWebhookController } from './payment-webhook.controller.js';
 import { PaymentWebhookService } from './payment-webhook.service.js';
+import { PartnerSettlementController } from './partner-settlement.controller.js';
+import { PartnerSettlementService } from './partner-settlement.service.js';
 import { ReconciliationController } from './reconciliation.controller.js';
 import { ReconciliationService } from './reconciliation.service.js';
 
@@ -22,12 +24,14 @@ import { ReconciliationService } from './reconciliation.service.js';
   controllers: [
     BillingController,
     EnterpriseBillingController,
+    PartnerSettlementController,
     PaymentWebhookController,
     ReconciliationController
   ],
   providers: [
     BillingService,
     EnterpriseBillingService,
+    PartnerSettlementService,
     PaymentWebhookService,
     ReconciliationService,
     AccessTokenGuard,
