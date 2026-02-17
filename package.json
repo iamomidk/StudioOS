@@ -10,7 +10,9 @@
     "format:check": "turbo run format:check",
     "typecheck:all": "turbo run typecheck",
     "prepare": "husky",
-    "commitlint": "commitlint --edit"
+    "commitlint": "commitlint --edit",
+    "openapi:sync": "pnpm --filter @studioos/packages-api_contracts_openapi sync",
+    "openapi:drift-check": "pnpm --filter @studioos/packages-api_contracts_openapi drift:check"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

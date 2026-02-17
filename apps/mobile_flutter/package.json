@@ -3,10 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "build": "echo building apps/mobile_flutter",
+    "build": "pnpm run generate:dart-client && echo building apps/mobile_flutter",
     "lint": "dart format --set-exit-if-changed --output=none lib test",
     "format:check": "dart format --set-exit-if-changed --output=none .",
     "typecheck": "dart format --set-exit-if-changed --output=none lib test",
-    "test": "echo testing apps/mobile_flutter"
+    "test": "echo testing apps/mobile_flutter",
+    "generate:dart-client": "node scripts/generate-dart-client.mjs"
   }
 }
