@@ -128,6 +128,31 @@ enum MobileSyncState {
   failed
 }
 
+enum WorkflowStatus {
+  draft
+  published
+  paused
+  stopped
+}
+
+enum WorkflowVersionStatus {
+  draft
+  published
+  archived
+}
+
+enum WorkflowConditionOperator {
+  AND
+  OR
+}
+
+enum WorkflowExecutionStatus {
+  success
+  skipped
+  blocked
+  failed
+}
+
 enum ReconciliationRunStatus {
   completed
   failed
@@ -249,6 +274,8 @@ model Organization {
   auditLogs            AuditLog[]
   rentalEvidence       RentalEvidence[]
   rentalSyncDiagnostics RentalSyncDiagnostic[]
+  workflows             Workflow[]
+  workflowExecutionLogs WorkflowExecutionLog[]
   analyticsEvents      AnalyticsEvent[]
   pricingExposureLogs  PricingExposureLog[]
   supportTickets       SupportTicket[]
@@ -464,6 +491,113 @@ model RentalSyncDiagnostic {
 
   @@index([organizationId, deviceSessionId, updatedAt])
   @@index([organizationId, syncState, updatedAt])
+}
+
+model Workflow {
+  id                    String                 @id @default(cuid())
+  organizationId        String
+  name                  String
+  description           String?
+  status                WorkflowStatus         @default(draft)
+  killSwitchEnabled     Boolean                @default(false)
+  dryRunEnabled         Boolean                @default(false)
+  maxExecutionsPerHour  Int                    @default(100)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  versions              WorkflowVersion[]
+  triggers              WorkflowTrigger[]
+  conditionGroups       WorkflowConditionGroup[]
+  actions               WorkflowAction[]
+  executionLogs         WorkflowExecutionLog[]
+
+  @@index([organizationId, status])
+}
+
+model WorkflowVersion {
+  id                 String                @id @default(cuid())
+  workflowId         String
+  versionNumber      Int
+  status             WorkflowVersionStatus @default(draft)
+  triggerConfig      Json
+  conditionConfig    Json
+  actionConfig       Json
+  activationStartsAt DateTime?
+  activationEndsAt   DateTime?
+  createdAt          DateTime              @default(now())
+  workflow           Workflow              @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  conditionGroups    WorkflowConditionGroup[]
+  actions            WorkflowAction[]
+  executionLogs      WorkflowExecutionLog[]
+
+  @@unique([workflowId, versionNumber])
+  @@index([workflowId, status, createdAt])
+}
+
+model WorkflowTrigger {
+  id            String   @id @default(cuid())
+  workflowId    String
+  eventType     String
+  source        String   @default("api")
+  isEnabled     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  workflow      Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId, eventType, isEnabled])
+}
+
+model WorkflowConditionGroup {
+  id             String                    @id @default(cuid())
+  workflowId     String
+  workflowVersionId String
+  parentGroupId  String?
+  operator       WorkflowConditionOperator @default(AND)
+  definition     Json
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  workflow       Workflow                  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflowVersion WorkflowVersion          @relation(fields: [workflowVersionId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId, workflowVersionId, parentGroupId])
+}
+
+model WorkflowAction {
+  id               String   @id @default(cuid())
+  workflowId       String
+  workflowVersionId String
+  actionType       String
+  orderIndex       Int      @default(0)
+  config           Json
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  workflow         Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflowVersion  WorkflowVersion @relation(fields: [workflowVersionId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId, workflowVersionId, orderIndex])
+}
+
+model WorkflowExecutionLog {
+  id                String                  @id @default(cuid())
+  organizationId    String
+  workflowId        String
+  workflowVersionId String
+  triggerEvent      String
+  entityType        String
+  entityId          String
+  dryRun            Boolean                 @default(false)
+  status            WorkflowExecutionStatus @default(success)
+  triggerInput      Json
+  rulePath          Json
+  actionResults     Json
+  errorMessage      String?
+  createdAt         DateTime                @default(now())
+  organization      Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workflow          Workflow                @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflowVersion   WorkflowVersion         @relation(fields: [workflowVersionId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, workflowId, entityType, entityId, createdAt])
+  @@index([workflowId, status, createdAt])
 }
 
 model RentalEvidence {

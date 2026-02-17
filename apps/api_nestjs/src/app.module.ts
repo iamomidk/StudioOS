@@ -29,6 +29,7 @@ import { RiskModule } from './modules/risk/risk.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { SupportModule } from './modules/support/support.module.js';
 import { UsersModule } from './modules/users/users.module.js';
+import { WorkflowsModule } from './modules/workflows/workflows.module.js';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { UsersModule } from './modules/users/users.module.js';
     InventoryModule,
     RentalsModule,
     RiskModule,
+    WorkflowsModule,
     SupportModule,
     StorageModule,
     BillingModule,
