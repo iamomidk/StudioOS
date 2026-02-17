@@ -1,0 +1,355 @@
+openapi: 3.0.0
+paths:
+  /health:
+    get:
+      operationId: HealthController_getHealth
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags:
+        - Health
+  /auth/login:
+    post:
+      operationId: AuthController_login
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a1
+        - Auth
+  /auth/refresh:
+    post:
+      operationId: AuthController_refresh
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a1
+  /auth/logout:
+    post:
+      operationId: AuthController_logout
+      parameters: []
+      responses:
+        "204":
+          description: ""
+      tags: *a1
+  /auth/profile:
+    get:
+      operationId: AuthController_profile
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a1
+  /rbac-probe/org-manage:
+    get:
+      operationId: RbacProbeController_canManageOrg
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a2
+        - RbacProbe
+  /rbac-probe/shoot:
+    get:
+      operationId: RbacProbeController_canShoot
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a2
+  /rbac-probe/edit:
+    get:
+      operationId: RbacProbeController_canEdit
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a2
+  /rbac-probe/rental-manage:
+    get:
+      operationId: RbacProbeController_canManageRental
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a2
+  /rbac-probe/client-portal:
+    get:
+      operationId: RbacProbeController_canAccessClientPortal
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a2
+  /crm/leads:
+    get:
+      operationId: CrmController_listLeads
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a3
+        - Crm
+    post:
+      operationId: CrmController_createLead
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a3
+  /crm/leads/{leadId}:
+    patch:
+      operationId: CrmController_updateLead
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a3
+  /crm/leads/{leadId}/convert:
+    post:
+      operationId: CrmController_convertLead
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a3
+  /crm/quotes:
+    get:
+      operationId: QuotesController_listQuotes
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a4
+        - Quotes
+    post:
+      operationId: QuotesController_createQuote
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a4
+  /crm/quotes/{quoteId}/status:
+    patch:
+      operationId: QuotesController_updateStatus
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a4
+  /bookings:
+    get:
+      operationId: BookingsController_listBookings
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a5
+        - Bookings
+    post:
+      operationId: BookingsController_createBooking
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a5
+  /bookings/{bookingId}:
+    patch:
+      operationId: BookingsController_updateBooking
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a5
+  /projects:
+    get:
+      operationId: ProjectsController_listProjects
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a6
+        - Projects
+    post:
+      operationId: ProjectsController_createProject
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a6
+  /projects/{projectId}/status:
+    patch:
+      operationId: ProjectsController_updateProjectStatus
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a6
+  /projects/{projectId}/timeline:
+    get:
+      operationId: ProjectsController_getProjectTimeline
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a6
+  /projects/{projectId}/client-approve:
+    post:
+      operationId: ProjectsController_approveProject
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a6
+  /projects/{projectId}/client-revision:
+    post:
+      operationId: ProjectsController_requestProjectRevision
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a6
+  /inventory/assets:
+    get:
+      operationId: InventoryController_listAssets
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a7
+        - Inventory
+    post:
+      operationId: InventoryController_createAsset
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a7
+  /inventory/items:
+    get:
+      operationId: InventoryController_listItems
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a7
+    post:
+      operationId: InventoryController_createItem
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a7
+  /rentals:
+    get:
+      operationId: RentalsController_listOrders
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a8
+        - Rentals
+    post:
+      operationId: RentalsController_createOrder
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a8
+  /rentals/{rentalOrderId}/status:
+    patch:
+      operationId: RentalsController_updateStatus
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a8
+  /rentals/{rentalOrderId}/evidence:
+    post:
+      operationId: RentalsController_createEvidence
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a8
+    get:
+      operationId: RentalsController_listEvidence
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a8
+  /storage/presign-upload:
+    post:
+      operationId: StorageController_presignUpload
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: &a9
+        - Storage
+  /storage/presign-download:
+    post:
+      operationId: StorageController_presignDownload
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a9
+  /billing/invoices:
+    get:
+      operationId: BillingController_listInvoices
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a10
+        - Billing
+    post:
+      operationId: BillingController_createInvoice
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags: *a10
+  /billing/invoices/{invoiceId}/totals:
+    patch:
+      operationId: BillingController_updateTotals
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a10
+  /billing/invoices/{invoiceId}/status:
+    patch:
+      operationId: BillingController_updateStatus
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a10
+  /billing/payments/webhook/{provider}:
+    post:
+      operationId: PaymentWebhookController_handleWebhook
+      parameters: []
+      responses:
+        "201":
+          description: ""
+      tags:
+        - PaymentWebhook
+info:
+  title: StudioOS API
+  description: Generated OpenAPI contract for StudioOS API.
+  version: 0.1.0
+  contact: {}
+tags: []
+servers: []
+components:
+  securitySchemes:
+    bearer:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+  schemas: {}
