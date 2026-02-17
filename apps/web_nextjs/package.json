@@ -3,10 +3,25 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "lint": "eslint src --ext .ts",
-    "format:check": "prettier --check \"src/**/*.ts\"",
+    "dev": "pnpm run generate:api-client && next dev",
+    "build": "pnpm run generate:api-client && next build",
+    "start": "next start",
+    "lint": "eslint app src middleware.ts --ext .ts,.tsx",
+    "format:check": "prettier --check --no-error-on-unmatched-pattern \"app/**/*.ts\" \"app/**/*.tsx\" \"src/**/*.ts\" \"src/**/*.tsx\" \"middleware.ts\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "echo testing apps/web_nextjs"
+    "test": "tsx --test src/test/**/*.test.ts",
+    "generate:api-client": "openapi-typescript ../../packages/api_contracts_openapi/openapi.yaml -o src/generated/openapi.types.ts"
+  },
+  "dependencies": {
+    "next": "^15.3.4",
+    "openapi-fetch": "^0.14.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "openapi-typescript": "^7.10.0",
+    "tsx": "^4.20.5"
   }
 }

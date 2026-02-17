@@ -3,7 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "build": "echo building packages/api_contracts_openapi",
+    "build": "test -f openapi.yaml && echo building packages/api_contracts_openapi",
+    "sync": "pnpm --filter @studioos/apps-api_nestjs openapi:generate",
+    "drift:check": "pnpm run sync && git diff --exit-code -- openapi.yaml",
     "lint": "echo linting packages/api_contracts_openapi",
     "format:check": "echo format check packages/api_contracts_openapi",
     "typecheck": "echo typecheck packages/api_contracts_openapi",
