@@ -29,6 +29,7 @@ import { RentalsModule } from './modules/rentals/rentals.module.js';
 import { RiskModule } from './modules/risk/risk.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { SupportModule } from './modules/support/support.module.js';
+import { TrustSafetyModule } from './modules/trust-safety/trust-safety.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { WorkflowsModule } from './modules/workflows/workflows.module.js';
 
@@ -51,6 +52,7 @@ import { WorkflowsModule } from './modules/workflows/workflows.module.js';
     RiskModule,
     WorkflowsModule,
     SupportModule,
+    TrustSafetyModule,
     StorageModule,
     BillingModule,
     NotificationsModule,

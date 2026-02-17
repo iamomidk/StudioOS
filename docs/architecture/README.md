@@ -32,3 +32,4 @@ Additional operations/release docs live outside the architecture package:
 - `../performance/load-testing-automation.md`: Performance target catalog, load profiles, regression gates, and bottleneck reporting artifacts.
 - `../billing/enterprise-billing-orchestration.md`: Enterprise plan/subscription/metering orchestration with proration, true-up, and auditable adjustments.
 - `../legal/contract-lifecycle-automation.md`: Contract templates, approval/signature lifecycle, amendments, and renewal schedule automation baseline.
+- `../trust-safety/moderation-stack.md`: Trust and safety policy registry, moderation workflow, appeals, sanctions, and analytics metrics payloads.

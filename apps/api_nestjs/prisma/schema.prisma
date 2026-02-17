@@ -249,6 +249,35 @@ enum ContractApprovalStepStatus {
   rejected
 }
 
+enum ModerationPolicyStatus {
+  draft
+  active
+  retired
+}
+
+enum ModerationCaseStatus {
+  open
+  in_review
+  resolved
+  appealed
+  closed
+}
+
+enum ModerationActionType {
+  allow
+  warn
+  throttle
+  quarantine
+  block
+  escalate
+}
+
+enum ModerationSanctionStatus {
+  active
+  expired
+  revoked
+}
+
 enum PartnerCredentialStatus {
   active
   suspended
@@ -292,6 +321,9 @@ model User {
   billingAdjustmentsRequested     BillingAdjustmentRequest[] @relation("BillingAdjustmentRequestedBy")
   billingAdjustmentsApproved      BillingAdjustmentRequest[] @relation("BillingAdjustmentApprovedBy")
   contractApprovalStepsActed      ContractApprovalStep[]
+  moderationDecisions             ModerationDecision[]
+  moderationAppealsRequested      ModerationAppeal[]
+  moderationAbuseReports          ModerationAbuseReport[]
 }
 
 model RefreshToken {
@@ -364,6 +396,10 @@ model Organization {
   billingAdjustments          BillingAdjustmentRequest[]
   contractClauseSets          ContractClauseSet[]
   contracts                   Contract[]
+  moderationPolicies          ModerationPolicy[]
+  moderationCases             ModerationCase[]
+  moderationSanctions         ModerationSanction[]
+  moderationAbuseReports      ModerationAbuseReport[]
 }
 
 model Membership {
@@ -1513,4 +1549,124 @@ model ContractApprovalStep {
 
   @@unique([approvalFlowId, stepOrder])
   @@index([status, createdAt])
+}
+
+model ModerationPolicy {
+  id             String                 @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  status         ModerationPolicyStatus @default(draft)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  versions       ModerationPolicyVersion[]
+  cases          ModerationCase[]
+
+  @@index([organizationId, status, createdAt])
+}
+
+model ModerationPolicyVersion {
+  id               String           @id @default(cuid())
+  policyId         String
+  versionNumber    Int
+  violationTypes   String[]
+  keywordRules     String[]
+  classifierConfig Json?
+  createdAt        DateTime         @default(now())
+  policy           ModerationPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  cases            ModerationCase[]
+
+  @@unique([policyId, versionNumber])
+  @@index([policyId, createdAt])
+}
+
+model ModerationCase {
+  id               String               @id @default(cuid())
+  organizationId   String
+  policyId         String?
+  policyVersionId  String?
+  entityType       String
+  entityId         String
+  source           String
+  violationType    String
+  severity         String
+  status           ModerationCaseStatus @default(open)
+  contentSnapshot  String
+  matchedRules     String[]
+  riskScore        Int                  @default(0)
+  suggestedAction  ModerationActionType @default(allow)
+  createdAt        DateTime             @default(now())
+  resolvedAt       DateTime?
+  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  policy           ModerationPolicy?    @relation(fields: [policyId], references: [id], onDelete: SetNull)
+  policyVersion    ModerationPolicyVersion? @relation(fields: [policyVersionId], references: [id], onDelete: SetNull)
+  decisions        ModerationDecision[]
+  appeals          ModerationAppeal[]
+  sanctions        ModerationSanction[]
+
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, violationType, createdAt])
+}
+
+model ModerationDecision {
+  id               String               @id @default(cuid())
+  moderationCaseId String
+  action           ModerationActionType
+  reasonCode       String
+  note             String?
+  actorUserId      String?
+  createdAt        DateTime             @default(now())
+  moderationCase   ModerationCase       @relation(fields: [moderationCaseId], references: [id], onDelete: Cascade)
+  actor            User?                @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([moderationCaseId, createdAt])
+}
+
+model ModerationAppeal {
+  id               String               @id @default(cuid())
+  moderationCaseId String
+  reason           String
+  status           ModerationCaseStatus @default(open)
+  requestedByUserId String?
+  createdAt        DateTime             @default(now())
+  moderationCase   ModerationCase       @relation(fields: [moderationCaseId], references: [id], onDelete: Cascade)
+  requestedBy      User?                @relation(fields: [requestedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([moderationCaseId, createdAt])
+}
+
+model ModerationSanction {
+  id               String                 @id @default(cuid())
+  organizationId   String
+  moderationCaseId String
+  entityType       String
+  entityId         String
+  action           ModerationActionType
+  status           ModerationSanctionStatus @default(active)
+  startsAt         DateTime
+  expiresAt        DateTime
+  createdAt        DateTime               @default(now())
+  organization     Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  moderationCase   ModerationCase         @relation(fields: [moderationCaseId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status, expiresAt])
+}
+
+model ModerationAbuseReport {
+  id             String       @id @default(cuid())
+  organizationId String
+  entityType     String
+  entityId       String
+  message        String
+  attachmentType String?
+  attachmentUrl  String?
+  quarantineStatus String
+  reporterUserId String?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reporter       User?        @relation(fields: [reporterUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([entityType, entityId, createdAt])
 }
