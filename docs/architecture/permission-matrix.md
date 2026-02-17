@@ -1,0 +1,18 @@
+# RBAC Permission Matrix
+
+Roles supported in API authorization:
+
+- `owner`
+- `manager`
+- `shooter`
+- `editor`
+- `renter`
+- `client`
+
+| Action | owner | manager | shooter | editor | renter | client |
+| --- | --- | --- | --- | --- | --- | --- |
+| `org.manage` | allow | allow | deny | deny | deny | deny |
+| `shoot.execute` | allow | allow | allow | deny | deny | deny |
+| `edit.execute` | allow | allow | deny | allow | deny | deny |
+| `rental.manage` | allow | allow | deny | deny | allow | deny |
+| `client.portal` | deny | deny | deny | deny | deny | allow |
