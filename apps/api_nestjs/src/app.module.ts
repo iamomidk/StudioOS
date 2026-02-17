@@ -1,23 +1,35 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 import { HealthModule } from './common/modules/health/health.module.js';
-import { APP_ENV, AppConfigService } from './config/app-config.service.js';
-import { loadEnv } from './config/env.schema.js';
+import { MetricsModule } from './common/modules/metrics/metrics.module.js';
+import { RateLimitGuard } from './common/security/rate-limit.guard.js';
+import { SecurityHeadersInterceptor } from './common/security/security-headers.interceptor.js';
+import { ConfigModule } from './config/config.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { BillingModule } from './modules/billing/billing.module.js';
 import { BookingsModule } from './modules/bookings/bookings.module.js';
 import { CrmModule } from './modules/crm/crm.module.js';
+import { DisputesModule } from './modules/disputes/disputes.module.js';
 import { InventoryModule } from './modules/inventory/inventory.module.js';
+import { MarketplaceModule } from './modules/marketplace/marketplace.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { OrgsModule } from './modules/orgs/orgs.module.js';
+import { PrismaModule } from './modules/prisma/prisma.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
+import { QueuesModule } from './modules/queues/queues.module.js';
 import { RentalsModule } from './modules/rentals/rentals.module.js';
+import { StorageModule } from './modules/storage/storage.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 
 @Module({
   imports: [
+    ConfigModule,
+    PrismaModule,
     HealthModule,
+    MetricsModule,
+    QueuesModule,
     AuthModule,
     OrgsModule,
     UsersModule,
@@ -26,17 +38,22 @@ import { UsersModule } from './modules/users/users.module.js';
     ProjectsModule,
     InventoryModule,
     RentalsModule,
+    StorageModule,
     BillingModule,
     NotificationsModule,
-    AuditModule
+    AuditModule,
+    MarketplaceModule,
+    DisputesModule
   ],
   providers: [
     {
-      provide: APP_ENV,
-      useFactory: () => loadEnv(process.env)
+      provide: APP_GUARD,
+      useClass: RateLimitGuard
     },
-    AppConfigService
-  ],
-  exports: [AppConfigService]
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: SecurityHeadersInterceptor
+    }
+  ]
 })
 export class AppModule {}

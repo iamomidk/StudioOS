@@ -8,7 +8,8 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 
 const requiredEnv = {
-  DATABASE_URL: 'postgresql://localhost:5432/studioos',
+  NODE_ENV: 'test',
+  DATABASE_URL: 'postgresql://omid@localhost:5432/studioos',
   REDIS_URL: 'redis://localhost:6379',
   JWT_ACCESS_TOKEN_SECRET: 'access-secret-placeholder',
   JWT_REFRESH_TOKEN_SECRET: 'refresh-secret-placeholder'
