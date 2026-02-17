@@ -10,7 +10,7 @@
     "format:check": "prettier --check --no-error-on-unmatched-pattern \"app/**/*.ts\" \"app/**/*.tsx\" \"src/**/*.ts\" \"src/**/*.tsx\" \"middleware.ts\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsx --test src/test/**/*.test.ts",
-    "generate:api-client": "openapi-typescript ../../packages/api_contracts_openapi/openapi.yaml -o src/generated/openapi.types.ts"
+    "generate:api-client": "openapi-typescript ../../packages/api_contracts_openapi/openapi.yaml -o src/generated/openapi.types.ts && prettier --write src/generated/openapi.types.ts"
   },
   "dependencies": {
     "next": "^15.3.4",
