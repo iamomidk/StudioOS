@@ -119,6 +119,8 @@ model RefreshToken {
 model Organization {
   id             String          @id @default(cuid())
   name           String
+  pilotOrg       Boolean         @default(false)
+  pilotCohortId  String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   memberships    Membership[]
@@ -135,6 +137,7 @@ model Organization {
   paymentWebhookEvents PaymentWebhookEvent[]
   auditLogs      AuditLog[]
   rentalEvidence RentalEvidence[]
+  analyticsEvents AnalyticsEvent[]
 }
 
 model Membership {
@@ -404,4 +407,24 @@ model AuditLog {
 
   @@index([organizationId, entityType, entityId])
   @@index([createdAt])
+}
+
+model AnalyticsEvent {
+  id             String       @id @default(cuid())
+  organizationId String
+  eventName      String
+  actorRole      String
+  source         String
+  entityType     String?
+  entityId       String?
+  payload        Json?
+  idempotencyKey String?      @unique
+  occurredAt     DateTime
+  pilotOrg       Boolean      @default(false)
+  pilotCohortId  String?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, eventName, occurredAt])
+  @@index([pilotOrg, pilotCohortId, occurredAt])
 }

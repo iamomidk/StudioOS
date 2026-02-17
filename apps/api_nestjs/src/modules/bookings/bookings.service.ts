@@ -5,6 +5,7 @@ import {
   NotFoundException
 } from '@nestjs/common';
 
+import { AnalyticsService } from '../analytics/analytics.service.js';
 import type { AccessClaims } from '../auth/rbac/access-token.guard.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateBookingDto } from './dto/create-booking.dto.js';
@@ -32,7 +33,10 @@ interface ConflictPayload {
 
 @Injectable()
 export class BookingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly analytics: AnalyticsService
+  ) {}
 
   async listBookings(organizationId: string) {
     return this.prisma.booking.findMany({
@@ -46,7 +50,7 @@ export class BookingsService {
     const endsAt = new Date(dto.endsAt);
     this.assertValidWindow(startsAt, endsAt);
 
-    await this.assertNoConflicts(dto.organizationId, startsAt, endsAt);
+    await this.assertNoConflicts(dto.organizationId, startsAt, endsAt, undefined, actor);
 
     const booking = await this.prisma.booking.create({
       data: {
@@ -73,6 +77,15 @@ export class BookingsService {
       }
     });
 
+    await this.analytics.recordEvent({
+      organizationId: dto.organizationId,
+      eventName: 'booking_created',
+      actorRole: actor?.roles?.[0] ?? 'system',
+      source: 'api',
+      entityType: 'Booking',
+      entityId: booking.id
+    });
+
     return booking;
   }
 
@@ -86,7 +99,7 @@ export class BookingsService {
     const endsAt = dto.endsAt ? new Date(dto.endsAt) : existing.endsAt;
     this.assertValidWindow(startsAt, endsAt);
 
-    await this.assertNoConflicts(existing.organizationId, startsAt, endsAt, bookingId);
+    await this.assertNoConflicts(existing.organizationId, startsAt, endsAt, bookingId, actor);
 
     const updateData: {
       title?: string;
@@ -139,7 +152,8 @@ export class BookingsService {
     organizationId: string,
     startsAt: Date,
     endsAt: Date,
-    excludeBookingId?: string
+    excludeBookingId?: string,
+    actor?: AccessClaims
   ): Promise<void> {
     const conflicts = await this.prisma.booking.findMany({
       where: {
@@ -173,6 +187,15 @@ export class BookingsService {
         status: booking.status as BookingStatus
       }))
     };
+
+    await this.analytics.recordEvent({
+      organizationId,
+      eventName: 'booking_conflict_detected',
+      actorRole: actor?.roles?.[0] ?? 'system',
+      source: 'api',
+      entityType: 'Booking',
+      payload: payload as unknown as Record<string, unknown>
+    });
 
     throw new ConflictException(payload);
   }

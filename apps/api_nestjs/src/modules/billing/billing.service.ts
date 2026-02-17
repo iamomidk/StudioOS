@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
+import { AnalyticsService } from '../analytics/analytics.service.js';
 import type { AccessClaims } from '../auth/rbac/access-token.guard.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { QueueProducerService } from '../queues/queue.producer.service.js';
@@ -26,7 +27,8 @@ const STATUS_TRANSITIONS: Record<InvoiceLifecycleStatus, InvoiceLifecycleStatus[
 export class BillingService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly queueProducer: QueueProducerService
+    private readonly queueProducer: QueueProducerService,
+    private readonly analytics: AnalyticsService
   ) {}
 
   async listInvoices(organizationId: string) {
@@ -167,6 +169,28 @@ export class BillingService {
           }
         }
       });
+
+      if (nextStatus === 'issued') {
+        await this.analytics.recordEvent({
+          organizationId,
+          eventName: 'invoice_issued',
+          actorRole: actor?.roles?.[0] ?? 'system',
+          source: 'api',
+          entityType: 'Invoice',
+          entityId: invoice.id
+        });
+      }
+
+      if (nextStatus === 'overdue') {
+        await this.analytics.recordEvent({
+          organizationId,
+          eventName: 'invoice_overdue',
+          actorRole: actor?.roles?.[0] ?? 'system',
+          source: 'api',
+          entityType: 'Invoice',
+          entityId: invoice.id
+        });
+      }
 
       if (nextStatus === 'issued' && updated.dueAt) {
         await this.queueProducer.enqueueInvoiceReminder({

@@ -1,0 +1,31 @@
+version: v1
+envelope:
+  required:
+    - timestamp
+    - org_id
+    - actor_role
+    - source
+  optional:
+    - project_id
+    - rental_order_id
+    - invoice_id
+    - lead_id
+    - quote_id
+    - booking_id
+    - pilot_org
+    - pilot_cohort_id
+    - idempotency_key
+events:
+  - lead_created
+  - lead_converted
+  - quote_sent
+  - quote_accepted
+  - booking_created
+  - booking_conflict_detected
+  - rental_reserved
+  - rental_picked_up
+  - rental_returned
+  - incident_created
+  - invoice_issued
+  - invoice_paid
+  - invoice_overdue

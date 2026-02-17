@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
+import { AnalyticsService } from '../analytics/analytics.service.js';
 import type { AccessClaims } from '../auth/rbac/access-token.guard.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateLeadDto } from './dto/create-lead.dto.js';
@@ -7,7 +8,10 @@ import { UpdateLeadDto } from './dto/update-lead.dto.js';
 
 @Injectable()
 export class CrmService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly analytics: AnalyticsService
+  ) {}
 
   async listLeads(organizationId: string) {
     return this.prisma.lead.findMany({
@@ -51,6 +55,15 @@ export class CrmService {
         action: 'lead.created',
         metadata: { name: lead.name }
       }
+    });
+
+    await this.analytics.recordEvent({
+      organizationId: dto.organizationId,
+      eventName: 'lead_created',
+      actorRole: actor?.roles?.[0] ?? 'system',
+      source: 'api',
+      entityType: 'Lead',
+      entityId: lead.id
     });
 
     return lead;
@@ -148,6 +161,15 @@ export class CrmService {
             clientId: client.id
           }
         }
+      });
+
+      await this.analytics.recordEvent({
+        organizationId,
+        eventName: 'lead_converted',
+        actorRole: actor?.roles?.[0] ?? 'system',
+        source: 'api',
+        entityType: 'Lead',
+        entityId: lead.id
       });
 
       return { lead: convertedLead, client };

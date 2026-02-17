@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma, type PaymentStatus } from '@prisma/client';
 
+import { AnalyticsService } from '../analytics/analytics.service.js';
 import { MetricsService } from '../../common/modules/metrics/metrics.service.js';
 import { AppConfigService } from '../../config/app-config.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -22,7 +23,8 @@ export class PaymentWebhookService {
   constructor(
     private readonly prisma: PrismaService,
     config: AppConfigService,
-    private readonly metrics: MetricsService
+    private readonly metrics: MetricsService,
+    private readonly analytics: AnalyticsService
   ) {
     const demoAdapter = new DemoPaymentProviderAdapter(config);
     this.adapters = new Map([[demoAdapter.provider, demoAdapter]]);
@@ -137,6 +139,18 @@ export class PaymentWebhookService {
             }
           }
         });
+
+        if (nextInvoiceStatus === 'paid') {
+          await this.analytics.recordEvent({
+            organizationId: event.organizationId,
+            eventName: 'invoice_paid',
+            actorRole: 'system',
+            source: 'api',
+            entityType: 'Invoice',
+            entityId: event.invoiceId,
+            idempotencyKey: `${event.provider}:${event.eventId}:invoice_paid`
+          });
+        }
 
         return {
           status: 'processed',

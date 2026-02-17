@@ -7,6 +7,7 @@ import { RateLimitGuard } from './common/security/rate-limit.guard.js';
 import { SecurityHeadersInterceptor } from './common/security/security-headers.interceptor.js';
 import { ConfigModule } from './config/config.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
+import { AnalyticsModule } from './modules/analytics/analytics.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { BillingModule } from './modules/billing/billing.module.js';
 import { BookingsModule } from './modules/bookings/bookings.module.js';
@@ -42,6 +43,7 @@ import { UsersModule } from './modules/users/users.module.js';
     BillingModule,
     NotificationsModule,
     AuditModule,
+    AnalyticsModule,
     MarketplaceModule,
     DisputesModule
   ],

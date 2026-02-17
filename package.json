@@ -16,7 +16,8 @@
     "rc:audit": "node scripts/rc-audit.mjs",
     "smoke:test": "node scripts/smoke-test.mjs",
     "slo:synthetic-check": "node scripts/slo-synthetic-check.mjs",
-    "backup:verify": "node scripts/backup-verify.mjs"
+    "backup:verify": "node scripts/backup-verify.mjs",
+    "pilot:kpi:quality-check": "node scripts/pilot-kpi-quality-check.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

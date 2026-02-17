@@ -5,6 +5,7 @@ import {
   NotFoundException
 } from '@nestjs/common';
 
+import { AnalyticsService } from '../analytics/analytics.service.js';
 import type { AccessClaims } from '../auth/rbac/access-token.guard.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateRentalEvidenceDto } from './dto/create-rental-evidence.dto.js';
@@ -37,7 +38,10 @@ interface RentalConflictPayload {
 
 @Injectable()
 export class RentalsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly analytics: AnalyticsService
+  ) {}
 
   async listOrders(organizationId: string, status?: RentalLifecycleStatus) {
     return this.prisma.rentalOrder.findMany({
@@ -95,6 +99,15 @@ export class RentalsService {
       }
     });
 
+    await this.analytics.recordEvent({
+      organizationId: dto.organizationId,
+      eventName: 'rental_reserved',
+      actorRole: actor?.roles?.[0] ?? 'system',
+      source: 'api',
+      entityType: 'RentalOrder',
+      entityId: order.id
+    });
+
     return order;
   }
 
@@ -144,6 +157,37 @@ export class RentalsService {
           }
         }
       });
+
+      if (nextStatus === 'picked_up') {
+        await this.analytics.recordEvent({
+          organizationId,
+          eventName: 'rental_picked_up',
+          actorRole: actor?.roles?.[0] ?? 'system',
+          source: 'api',
+          entityType: 'RentalOrder',
+          entityId: order.id
+        });
+      }
+      if (nextStatus === 'returned') {
+        await this.analytics.recordEvent({
+          organizationId,
+          eventName: 'rental_returned',
+          actorRole: actor?.roles?.[0] ?? 'system',
+          source: 'api',
+          entityType: 'RentalOrder',
+          entityId: order.id
+        });
+      }
+      if (nextStatus === 'incident') {
+        await this.analytics.recordEvent({
+          organizationId,
+          eventName: 'incident_created',
+          actorRole: actor?.roles?.[0] ?? 'system',
+          source: 'api',
+          entityType: 'RentalOrder',
+          entityId: order.id
+        });
+      }
 
       return updatedOrder;
     });

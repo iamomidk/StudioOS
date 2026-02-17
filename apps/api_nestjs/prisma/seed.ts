@@ -29,7 +29,9 @@ async function main(): Promise<void> {
 
   const organization = await prisma.organization.create({
     data: {
-      name: 'StudioOS Demo Org'
+      name: 'StudioOS Demo Org',
+      pilotOrg: true,
+      pilotCohortId: 'cohort-alpha'
     }
   });
 

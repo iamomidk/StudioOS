@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
+import { AnalyticsService } from '../analytics/analytics.service.js';
 import type { AccessClaims } from '../auth/rbac/access-token.guard.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateQuoteDto } from './dto/create-quote.dto.js';
@@ -16,7 +17,10 @@ const STATUS_TRANSITIONS: Record<QuoteStatus, QuoteStatus[]> = {
 
 @Injectable()
 export class QuotesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly analytics: AnalyticsService
+  ) {}
 
   async listQuotes(organizationId: string) {
     return this.prisma.quote.findMany({
@@ -147,6 +151,38 @@ export class QuotesService {
           }
         }
       });
+
+      if (nextStatus === 'sent') {
+        await this.analytics.recordEvent({
+          organizationId,
+          eventName: 'quote_sent',
+          actorRole: actor?.roles?.[0] ?? 'system',
+          source: 'api',
+          entityType: 'Quote',
+          entityId: quote.id
+        });
+      }
+
+      if (nextStatus === 'accepted') {
+        await this.analytics.recordEvent({
+          organizationId,
+          eventName: 'quote_accepted',
+          actorRole: actor?.roles?.[0] ?? 'system',
+          source: 'api',
+          entityType: 'Quote',
+          entityId: quote.id
+        });
+        if (bookingId) {
+          await this.analytics.recordEvent({
+            organizationId,
+            eventName: 'booking_created',
+            actorRole: actor?.roles?.[0] ?? 'system',
+            source: 'api',
+            entityType: 'Booking',
+            entityId: bookingId
+          });
+        }
+      }
 
       return tx.quote.findUnique({
         where: { id: updatedQuote.id },
