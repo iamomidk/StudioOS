@@ -7,3 +7,7 @@
 - `permission-matrix.md`: RBAC actions and role allow/deny matrix.
 - `runbooks/`: Incident, billing, queue, migration rollback, key rotation, and go-live runbooks.
 - `security-baseline.md`: Security hardening checklist and baseline controls.
+
+Additional operations/release docs live outside the architecture package:
+
+- `../release/release-readiness.md`: RC gate runner, artifact schema, and CI usage.
