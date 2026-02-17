@@ -13,6 +13,7 @@ import { BillingModule } from './modules/billing/billing.module.js';
 import { BookingsModule } from './modules/bookings/bookings.module.js';
 import { CrmModule } from './modules/crm/crm.module.js';
 import { DisputesModule } from './modules/disputes/disputes.module.js';
+import { EnterpriseModule } from './modules/enterprise/enterprise.module.js';
 import { InventoryModule } from './modules/inventory/inventory.module.js';
 import { LaunchModule } from './modules/launch/launch.module.js';
 import { MarketplaceModule } from './modules/marketplace/marketplace.module.js';
@@ -53,7 +54,8 @@ import { UsersModule } from './modules/users/users.module.js';
     AnalyticsModule,
     LaunchModule,
     MarketplaceModule,
-    DisputesModule
+    DisputesModule,
+    EnterpriseModule
   ],
   providers: [
     {

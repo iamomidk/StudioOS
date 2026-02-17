@@ -219,6 +219,14 @@ export class AppConfigService {
     return this.env.SLA_BOOKING_CONFIRMATION_MINUTES;
   }
 
+  get enterpriseDeprovisionGraceSeconds(): number {
+    return this.env.ENTERPRISE_DEPROVISION_GRACE_SECONDS;
+  }
+
+  get breakGlassAdminEmail(): string {
+    return this.env.BREAK_GLASS_ADMIN_EMAIL;
+  }
+
   isPublicRolloutEnabledFor(organizationId: string, pilotCohortId: string | null): boolean {
     if (!this.featurePublicLaunchEnabled || this.publicModulesGlobalKillSwitch) {
       return false;

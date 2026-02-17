@@ -24,4 +24,5 @@ Roles supported in API authorization:
 | `dispute.automation.override`   | allow | allow   | deny    | deny   | deny   | deny   |
 | `risk.scoring.manage`           | allow | allow   | deny    | deny   | deny   | deny   |
 | `partner.credentials.manage`    | allow | allow   | deny    | deny   | deny   | deny   |
+| `enterprise.settings.manage`    | allow | allow   | deny    | deny   | deny   | deny   |
 | `client.portal`                 | deny  | deny    | deny    | deny   | deny   | allow  |

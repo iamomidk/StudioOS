@@ -24,7 +24,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
-    return this.authService.login(dto.email, dto.password);
+    return this.authService.login(dto.email, dto.password, dto.mfaCode);
   }
 
   @Post('refresh')

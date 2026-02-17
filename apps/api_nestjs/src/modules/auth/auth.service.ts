@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -25,6 +26,12 @@ interface AccessClaims {
   roles: Role[];
 }
 
+interface UserAuthPolicies {
+  requiresSso: boolean;
+  requiresMfa: boolean;
+  sessionDurationMinutes: number;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -40,10 +47,41 @@ export class AuthService {
     private readonly config: AppConfigService
   ) {}
 
-  async login(email: string, password: string): Promise<TokenPair> {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+  async login(email: string, password: string, mfaCode?: string): Promise<TokenPair> {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: {
+        memberships: {
+          include: {
+            organization: {
+              select: {
+                id: true,
+                ssoEnforced: true,
+                mfaEnforced: true,
+                sessionDurationMinutes: true
+              }
+            }
+          }
+        }
+      }
+    });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (this.isUserDeprovisioned(user.deactivatedAt)) {
+      throw new UnauthorizedException('User is deprovisioned');
+    }
+
+    const policies = this.buildPoliciesFromMemberships(user.memberships);
+    if (policies.requiresSso) {
+      throw new UnauthorizedException('SSO-only login is enforced for this organization');
+    }
+
+    if (policies.requiresMfa) {
+      if (!user.mfaEnabled || mfaCode !== '000000') {
+        throw new UnauthorizedException('MFA verification failed');
+      }
     }
 
     const passwordOk = await bcrypt.compare(password, user.passwordHash);
@@ -51,7 +89,9 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return this.issueTokenPair(user.id);
+    const tokens = await this.issueTokenPair(user.id, policies.sessionDurationMinutes);
+    await this.writeAuthAuditLogs(user.id, 'auth.login.succeeded', { source: 'password' });
+    return tokens;
   }
 
   async refresh(refreshToken: string): Promise<TokenPair> {
@@ -70,7 +110,29 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token is no longer valid');
     }
 
-    const rotated = await this.issueTokenPair(existing.userId);
+    const user = await this.prisma.user.findUnique({
+      where: { id: existing.userId },
+      include: {
+        memberships: {
+          include: {
+            organization: {
+              select: {
+                id: true,
+                ssoEnforced: true,
+                mfaEnforced: true,
+                sessionDurationMinutes: true
+              }
+            }
+          }
+        }
+      }
+    });
+    if (!user || this.isUserDeprovisioned(user.deactivatedAt)) {
+      throw new UnauthorizedException('User is deprovisioned');
+    }
+
+    const policies = this.buildPoliciesFromMemberships(user.memberships);
+    const rotated = await this.issueTokenPair(existing.userId, policies.sessionDurationMinutes);
 
     await this.prisma.refreshToken.update({
       where: { id: existing.id },
@@ -126,7 +188,7 @@ export class AuthService {
     };
   }
 
-  private async issueTokenPair(userId: string): Promise<TokenPair> {
+  async issueTokenPair(userId: string, sessionDurationMinutes?: number): Promise<TokenPair> {
     const memberships = await this.prisma.membership.findMany({
       where: { userId },
       select: { role: true }
@@ -147,7 +209,7 @@ export class AuthService {
     const refreshToken = jwt.sign(
       { sub: userId, jti, type: 'refresh' },
       this.config.jwtRefreshTokenSecret,
-      { expiresIn: '7d' }
+      { expiresIn: `${sessionDurationMinutes ?? 7 * 24 * 60}m` }
     );
 
     const decoded = jwt.decode(refreshToken) as { exp?: number };
@@ -184,5 +246,62 @@ export class AuthService {
 
   private hashToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  private buildPoliciesFromMemberships(
+    memberships: Array<{
+      organization: {
+        ssoEnforced: boolean;
+        mfaEnforced: boolean;
+        sessionDurationMinutes: number;
+      };
+    }>
+  ): UserAuthPolicies {
+    const sessionDurationMinutes = memberships.reduce(
+      (min, membership) => {
+        return Math.min(min, membership.organization.sessionDurationMinutes);
+      },
+      7 * 24 * 60
+    );
+
+    return {
+      requiresSso: memberships.some((membership) => membership.organization.ssoEnforced),
+      requiresMfa: memberships.some((membership) => membership.organization.mfaEnforced),
+      sessionDurationMinutes: Math.max(15, sessionDurationMinutes)
+    };
+  }
+
+  private isUserDeprovisioned(deactivatedAt: Date | null): boolean {
+    if (!deactivatedAt) {
+      return false;
+    }
+    const graceMs = this.config.enterpriseDeprovisionGraceSeconds * 1000;
+    return Date.now() >= deactivatedAt.getTime() + graceMs;
+  }
+
+  private async writeAuthAuditLogs(
+    userId: string,
+    action: string,
+    metadata: Record<string, unknown>
+  ): Promise<void> {
+    const memberships = await this.prisma.membership.findMany({
+      where: { userId },
+      select: { organizationId: true }
+    });
+
+    if (memberships.length === 0) {
+      return;
+    }
+
+    await this.prisma.auditLog.createMany({
+      data: memberships.map((membership) => ({
+        organizationId: membership.organizationId,
+        actorUserId: userId,
+        entityType: 'User',
+        entityId: userId,
+        action,
+        metadata: metadata as Prisma.InputJsonValue
+      }))
+    });
   }
 }

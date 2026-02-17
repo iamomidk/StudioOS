@@ -86,7 +86,9 @@ const envSchema = z.object({
   SLA_BUSINESS_HOUR_END: z.coerce.number().int().min(1).max(24).default(17),
   SLA_ALERT_WEBHOOK_URL: z.string().default(''),
   SLA_QUOTE_RESPONSE_MINUTES: z.coerce.number().int().min(1).default(1440),
-  SLA_BOOKING_CONFIRMATION_MINUTES: z.coerce.number().int().min(1).default(720)
+  SLA_BOOKING_CONFIRMATION_MINUTES: z.coerce.number().int().min(1).default(720),
+  ENTERPRISE_DEPROVISION_GRACE_SECONDS: z.coerce.number().int().min(0).default(900),
+  BREAK_GLASS_ADMIN_EMAIL: z.string().default('')
 });
 
 export type AppEnv = z.infer<typeof envSchema>;
