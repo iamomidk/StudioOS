@@ -1,0 +1,20 @@
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = [".venv", "node_modules"]
+
+[tool.black]
+line-length = 100
+target-version = ["py313"]
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+exclude = ["^node_modules/", "^\\.venv/"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
