@@ -1,0 +1,12 @@
+{
+  "name": "@studioos/apps-mobile_flutter",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "build": "echo building apps/mobile_flutter",
+    "lint": "dart format --set-exit-if-changed --output=none lib test",
+    "format:check": "dart format --set-exit-if-changed --output=none .",
+    "typecheck": "dart format --set-exit-if-changed --output=none lib test",
+    "test": "echo testing apps/mobile_flutter"
+  }
+}

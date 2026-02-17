@@ -1,0 +1,12 @@
+{
+  "name": "@studioos/packages-api_contracts_openapi",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "build": "echo building packages/api_contracts_openapi",
+    "lint": "echo linting packages/api_contracts_openapi",
+    "format:check": "echo format check packages/api_contracts_openapi",
+    "typecheck": "echo typecheck packages/api_contracts_openapi",
+    "test": "echo testing packages/api_contracts_openapi"
+  }
+}

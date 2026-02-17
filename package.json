@@ -1,0 +1,27 @@
+{
+  "name": "studioos",
+  "private": true,
+  "packageManager": "pnpm@10.6.0",
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "lint:all": "turbo run lint",
+    "format:check": "turbo run format:check",
+    "typecheck:all": "turbo run typecheck",
+    "prepare": "husky",
+    "commitlint": "commitlint --edit"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@eslint/js": "^9.22.0",
+    "@types/node": "^22.13.14",
+    "eslint": "^9.22.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.5.3",
+    "turbo": "^2.8.9",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.26.1"
+  }
+}
