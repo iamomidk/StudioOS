@@ -88,3 +88,15 @@ This document lists baseline environment variables for each app and service in S
 | `SMOKE_ORG_ID` | Yes | `org_smoke_123` | Dedicated smoke organization/tenant id. |
 | `SMOKE_CHECK_TOKEN` | Yes | `change-me-smoke-token` | Token passed as `x-smoke-token` to protected smoke endpoints. |
 | `SMOKE_TIMEOUT_MS` | No | `300000` | Global smoke timeout budget (default 300000ms / 5 minutes). |
+
+## Backup verify runner (release ops)
+
+`pnpm backup:verify` expects these process env vars at runtime:
+
+| Variable | Required | Example | Notes |
+| --- | --- | --- | --- |
+| `BACKUP_S3_BUCKET` | Yes | `studioos-backups-staging` | S3 bucket that stores backup artifacts. |
+| `BACKUP_S3_PREFIX` | No | `postgres/` | Prefix used when discovering latest backup object. |
+| `BACKUP_AWS_REGION` | Yes | `us-east-1` | Region used for S3 backup discovery/download. |
+| `BACKUP_VERIFY_TIMEOUT_MS` | No | `600000` | Timeout budget for restore drill workflow. |
+| `BACKUP_MIN_ORG_ROWS` | No | `0` | Minimum expected `Organization` row count after restore. |

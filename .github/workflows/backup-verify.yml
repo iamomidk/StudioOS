@@ -1,0 +1,42 @@
+name: Backup Verify
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.BACKUP_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.BACKUP_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.BACKUP_AWS_REGION }}
+      - run: pnpm install --frozen-lockfile
+      - name: Run backup verification and restore drill
+        env:
+          BACKUP_S3_BUCKET: ${{ vars.BACKUP_S3_BUCKET }}
+          BACKUP_S3_PREFIX: ${{ vars.BACKUP_S3_PREFIX }}
+          BACKUP_AWS_REGION: ${{ vars.BACKUP_AWS_REGION }}
+          BACKUP_VERIFY_TIMEOUT_MS: 600000
+          BACKUP_MIN_ORG_ROWS: 0
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+          ALERT_ROUTING_KEY: ${{ secrets.ALERT_ROUTING_KEY }}
+        run: pnpm backup:verify
+      - name: Upload backup verification artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-verify-report
+          path: artifacts/backup-verify/*
+          if-no-files-found: warn
