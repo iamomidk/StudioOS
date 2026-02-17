@@ -10,6 +10,7 @@ import { AnalyticsService } from '../analytics/analytics.service.js';
 import { MetricsService } from '../../common/modules/metrics/metrics.service.js';
 import { AppConfigService } from '../../config/app-config.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { RiskService } from '../risk/risk.service.js';
 import { DemoPaymentProviderAdapter } from './payment-providers/demo-payment-provider.adapter.js';
 import type {
   NormalizedPaymentWebhookEvent,
@@ -24,7 +25,8 @@ export class PaymentWebhookService {
     private readonly prisma: PrismaService,
     config: AppConfigService,
     private readonly metrics: MetricsService,
-    private readonly analytics: AnalyticsService
+    private readonly analytics: AnalyticsService,
+    private readonly risk: RiskService
   ) {
     const demoAdapter = new DemoPaymentProviderAdapter(config);
     this.adapters = new Map([[demoAdapter.provider, demoAdapter]]);
@@ -69,6 +71,18 @@ export class PaymentWebhookService {
         });
         if (!invoice) {
           throw new NotFoundException('Invoice not found');
+        }
+
+        const risk = await this.risk.evaluate({
+          organizationId: event.organizationId,
+          flowType: 'payment',
+          entityType: 'Invoice',
+          entityId: event.invoiceId,
+          amountCents: event.amountCents
+        });
+
+        if (risk.blocked) {
+          throw new UnauthorizedException('Payment blocked by risk policy');
         }
 
         const paymentStatus = this.mapEventToPaymentStatus(event.type);
@@ -135,7 +149,11 @@ export class PaymentWebhookService {
               provider: event.provider,
               eventId: event.eventId,
               eventType: event.type,
-              invoiceStatus: nextInvoiceStatus
+              invoiceStatus: nextInvoiceStatus,
+              riskScore: risk.riskScore,
+              riskLevel: risk.riskLevel,
+              riskMode: risk.mode,
+              riskActionTaken: risk.actionTaken
             }
           }
         });

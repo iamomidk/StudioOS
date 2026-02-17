@@ -52,6 +52,12 @@ const envSchema = z.object({
   PUBLIC_ROLLOUT_PERCENTAGE: z.coerce.number().int().min(0).max(100).default(0),
   PUBLIC_ROLLOUT_HASH_SALT: z.string().min(1).default('studioos-public-rollout-v1'),
   FEATURE_PRICING_EXPERIMENTS_ENABLED: booleanFromEnv.default(false),
+  RISK_SCORING_MODE: z
+    .enum(['OFF', 'ADVISORY', 'SOFT_ENFORCE', 'HARD_ENFORCE'])
+    .default('ADVISORY'),
+  RISK_SCORING_GLOBAL_KILL_SWITCH: booleanFromEnv.default(false),
+  RISK_SCORING_BYPASS_ORG_IDS: z.string().default(''),
+  RISK_SCORING_ENFORCE_COHORT_IDS: z.string().default(''),
   PRICING_EXPERIMENTS_GLOBAL_KILL_SWITCH: booleanFromEnv.default(false),
   ONBOARDING_STEPS: z
     .string()

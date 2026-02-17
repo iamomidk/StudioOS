@@ -7,6 +7,7 @@ import { AccessTokenGuard } from '../auth/rbac/access-token.guard.js';
 import { RolesGuard } from '../auth/rbac/roles.guard.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { QueuesModule } from '../queues/queues.module.js';
+import { RiskModule } from '../risk/risk.module.js';
 import { BillingController } from './billing.controller.js';
 import { BillingService } from './billing.service.js';
 import { PaymentWebhookController } from './payment-webhook.controller.js';
@@ -15,7 +16,7 @@ import { ReconciliationController } from './reconciliation.controller.js';
 import { ReconciliationService } from './reconciliation.service.js';
 
 @Module({
-  imports: [ConfigModule, PrismaModule, QueuesModule, MetricsModule, AnalyticsModule],
+  imports: [ConfigModule, PrismaModule, QueuesModule, MetricsModule, AnalyticsModule, RiskModule],
   controllers: [BillingController, PaymentWebhookController, ReconciliationController],
   providers: [
     BillingService,

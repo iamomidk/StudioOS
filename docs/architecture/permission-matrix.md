@@ -22,4 +22,5 @@ Roles supported in API authorization:
 | `launch.health.view` | allow | allow | deny | deny | deny | deny |
 | `billing.reconciliation.manage` | allow | allow | deny | deny | deny | deny |
 | `dispute.automation.override` | allow | allow | deny | deny | deny | deny |
+| `risk.scoring.manage` | allow | allow | deny | deny | deny | deny |
 | `client.portal` | deny | deny | deny | deny | deny | allow |

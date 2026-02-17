@@ -17,6 +17,7 @@ Additional operations/release docs live outside the architecture package:
 - `../ops/support-workflow.md`: Support intake/triage workflow, diagnostics, and safe admin actions.
 - `../ops/sla-policy.md`: SLA policy config, breach states, dashboard/report endpoints, and alerting.
 - `../ops/dispute-automation.md`: Deterministic dispute policy engine, evidence scoring, routing, and overrides.
+- `../security/risk-scoring-rollout.md`: Advisory-to-enforcement risk scoring controls and explainability surfaces.
 - `../release/public-launch.md`: Controlled rollout, kill switch, launch health, and post-launch review flow.
 - `../analytics/pilot-kpis.md`: Pilot KPI definitions, endpoint contracts, and quality checks.
 - `../analytics/pricing-experiments.md`: Pricing experiment model, evaluation endpoints, and guardrails.

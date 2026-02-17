@@ -22,6 +22,7 @@ import { PrismaModule } from './modules/prisma/prisma.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
 import { QueuesModule } from './modules/queues/queues.module.js';
 import { RentalsModule } from './modules/rentals/rentals.module.js';
+import { RiskModule } from './modules/risk/risk.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { SupportModule } from './modules/support/support.module.js';
 import { UsersModule } from './modules/users/users.module.js';
@@ -41,6 +42,7 @@ import { UsersModule } from './modules/users/users.module.js';
     ProjectsModule,
     InventoryModule,
     RentalsModule,
+    RiskModule,
     SupportModule,
     StorageModule,
     BillingModule,

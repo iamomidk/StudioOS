@@ -31,6 +31,10 @@ This document lists baseline environment variables for each app and service in S
 | `FEATURE_MARKETPLACE_ENABLED` | No | `false` | Enables marketplace search API feature skeleton. |
 | `FEATURE_DISPUTES_ENABLED` | No | `false` | Enables disputes module API feature skeleton. |
 | `DISPUTE_POLICY_VERSION` | No | `v1` | Policy version tag applied to new dispute automation decisions. |
+| `RISK_SCORING_MODE` | No | `ADVISORY` | Global risk rollout mode (`OFF`, `ADVISORY`, `SOFT_ENFORCE`, `HARD_ENFORCE`). |
+| `RISK_SCORING_GLOBAL_KILL_SWITCH` | No | `false` | Emergency control to disable risk enforcement/blocking immediately. |
+| `RISK_SCORING_BYPASS_ORG_IDS` | No | `` | Comma-separated org allowlist bypassing scoring enforcement. |
+| `RISK_SCORING_ENFORCE_COHORT_IDS` | No | `` | Cohorts allowed to receive soft/hard enforcement; others fall back to advisory. |
 | `FEATURE_PUBLIC_LAUNCH_ENABLED` | No | `false` | Master switch for controlled public module rollout. |
 | `PUBLIC_MODULES_GLOBAL_KILL_SWITCH` | No | `false` | Emergency global kill switch for public modules behind rollout controls. |
 | `PUBLIC_ROLLOUT_ALLOWLIST_ORG_IDS` | No | `` | Comma-separated org IDs enabled regardless of percentage rollout. |

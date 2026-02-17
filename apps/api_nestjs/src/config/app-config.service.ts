@@ -133,6 +133,26 @@ export class AppConfigService {
     return this.env.FEATURE_PRICING_EXPERIMENTS_ENABLED;
   }
 
+  get riskScoringMode(): AppEnv['RISK_SCORING_MODE'] {
+    return this.env.RISK_SCORING_MODE;
+  }
+
+  get riskScoringGlobalKillSwitch(): boolean {
+    return this.env.RISK_SCORING_GLOBAL_KILL_SWITCH;
+  }
+
+  get riskScoringBypassOrgIds(): string[] {
+    return this.env.RISK_SCORING_BYPASS_ORG_IDS.split(',')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+  }
+
+  get riskScoringEnforceCohortIds(): string[] {
+    return this.env.RISK_SCORING_ENFORCE_COHORT_IDS.split(',')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+  }
+
   get pricingExperimentsGlobalKillSwitch(): boolean {
     return this.env.PRICING_EXPERIMENTS_GLOBAL_KILL_SWITCH;
   }

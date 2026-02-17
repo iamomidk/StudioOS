@@ -8,6 +8,7 @@ import {
 import { AnalyticsService } from '../analytics/analytics.service.js';
 import type { AccessClaims } from '../auth/rbac/access-token.guard.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { RiskService } from '../risk/risk.service.js';
 import { CreateRentalEvidenceDto } from './dto/create-rental-evidence.dto.js';
 import { CreateRentalOrderDto } from './dto/create-rental-order.dto.js';
 import { ListRentalEvidenceDto } from './dto/list-rental-evidence.dto.js';
@@ -40,7 +41,8 @@ interface RentalConflictPayload {
 export class RentalsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly analytics: AnalyticsService
+    private readonly analytics: AnalyticsService,
+    private readonly risk: RiskService
   ) {}
 
   async listOrders(organizationId: string, status?: RentalLifecycleStatus) {
@@ -71,6 +73,23 @@ export class RentalsService {
       throw new NotFoundException('Inventory item not found');
     }
 
+    const risk = await this.risk.evaluate({
+      organizationId: dto.organizationId,
+      userId: actor?.sub ?? null,
+      flowType: 'rental',
+      entityType: 'RentalOrder',
+      amountCents: 0
+    });
+
+    if (risk.blocked) {
+      throw new ConflictException({
+        code: 'RISK_BLOCKED',
+        message: 'Rental reservation blocked by risk policy',
+        riskLevel: risk.riskLevel,
+        reasonCodes: risk.reasonCodes
+      });
+    }
+
     await this.assertNoConflicts(dto.organizationId, dto.inventoryItemId, startsAt, endsAt);
 
     const order = await this.prisma.rentalOrder.create({
@@ -94,7 +113,12 @@ export class RentalsService {
         action: 'rental.created',
         metadata: {
           startsAt: order.startsAt,
-          endsAt: order.endsAt
+          endsAt: order.endsAt,
+          riskScore: risk.riskScore,
+          riskLevel: risk.riskLevel,
+          riskMode: risk.mode,
+          riskActionTaken: risk.actionTaken,
+          depositMultiplier: risk.depositMultiplier
         }
       }
     });

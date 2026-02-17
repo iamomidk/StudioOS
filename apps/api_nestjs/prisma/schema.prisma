@@ -145,6 +145,19 @@ enum ReconciliationDiscrepancyStatus {
   resolved
 }
 
+enum RiskScoringMode {
+  OFF
+  ADVISORY
+  SOFT_ENFORCE
+  HARD_ENFORCE
+}
+
+enum RiskLevel {
+  low
+  medium
+  high
+}
+
 model User {
   id             String              @id @default(cuid())
   email          String              @unique
@@ -167,6 +180,7 @@ model User {
   reconciliationDiscrepanciesAcked ReconciliationDiscrepancy[] @relation("ReconciliationAcknowledgedBy")
   reconciliationDiscrepanciesResolved ReconciliationDiscrepancy[] @relation("ReconciliationResolvedBy")
   reconciliationActions            ReconciliationActionLog[]
+  riskEvaluations                 RiskEvaluation[]
 }
 
 model RefreshToken {
@@ -211,6 +225,7 @@ model Organization {
   reconciliationItems  ReconciliationItem[]
   reconciliationDiscrepancies ReconciliationDiscrepancy[]
   reconciliationActionLogs    ReconciliationActionLog[]
+  riskEvaluations             RiskEvaluation[]
 }
 
 model Membership {
@@ -574,6 +589,32 @@ model ReconciliationActionLog {
 
   @@index([runId, createdAt])
   @@index([organizationId, createdAt])
+}
+
+model RiskEvaluation {
+  id               String          @id @default(cuid())
+  organizationId   String
+  userId           String?
+  flowType         String
+  entityType       String?
+  entityId         String?
+  mode             RiskScoringMode
+  riskScore        Int
+  riskLevel        RiskLevel
+  reasonCodes      String[]
+  actionTaken      String
+  blocked          Boolean         @default(false)
+  bypassed         Boolean         @default(false)
+  pilotCohortId    String?
+  reviewStatus     String          @default("pending")
+  reviewNote       String?
+  createdAt        DateTime        @default(now())
+  organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user             User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([flowType, riskLevel, createdAt])
+  @@index([reviewStatus, createdAt])
 }
 
 model AuditLog {
