@@ -1,0 +1,19 @@
+{
+  email {$TLS_EMAIL}
+}
+
+{$APP_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy web:3000
+}
+
+{$API_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy api:3000
+}
+
+# Optional temporary HTTP fallback for direct IP smoke testing.
+# Keep disabled in normal domain deployments.
+# http://{$VM_PUBLIC_IP} {
+#   reverse_proxy web:3000
+# }

@@ -1,0 +1,69 @@
+name: deploy-vm
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_ref:
+        description: Git SHA or ref to deploy
+        required: false
+        default: ''
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: deploy-mvp-vm
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve deploy ref
+        id: ref
+        run: |
+          if [ -n "${{ github.event.inputs.deploy_ref }}" ]; then
+            echo "value=${{ github.event.inputs.deploy_ref }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.VM_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          if [ -n "${{ secrets.VM_KNOWN_HOSTS }}" ]; then
+            printf '%s\n' "${{ secrets.VM_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "${{ secrets.VM_SSH_PORT }}" "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
+          fi
+
+      - name: Deploy on VM
+        run: |
+          ssh -p "${{ secrets.VM_SSH_PORT }}" "${{ secrets.VM_DEPLOY_USER }}@${{ secrets.VM_HOST }}" \
+            "cd /opt/studio-platform && git fetch --all --prune && bash scripts/deploy/vm/deploy.sh '${{ steps.ref.outputs.value }}'"
+
+      - name: Fetch deploy artifacts
+        run: |
+          mkdir -p artifacts/deploy artifacts/smoke
+          scp -P "${{ secrets.VM_SSH_PORT }}" "${{ secrets.VM_DEPLOY_USER }}@${{ secrets.VM_HOST }}:/opt/studio-platform/logs/smoke-latest.json" artifacts/smoke/smoke-latest.json || true
+          scp -P "${{ secrets.VM_SSH_PORT }}" "${{ secrets.VM_DEPLOY_USER }}@${{ secrets.VM_HOST }}:/opt/studio-platform/artifacts/deploy/vm-deploy-report.json" artifacts/deploy/vm-deploy-report.json || true
+          scp -P "${{ secrets.VM_SSH_PORT }}" "${{ secrets.VM_DEPLOY_USER }}@${{ secrets.VM_HOST }}:/opt/studio-platform/artifacts/deploy/vm-deploy-report.md" artifacts/deploy/vm-deploy-report.md || true
+
+      - name: Print smoke/deploy summaries
+        run: |
+          [ -f artifacts/smoke/smoke-latest.json ] && cat artifacts/smoke/smoke-latest.json || echo "smoke summary unavailable"
+          [ -f artifacts/deploy/vm-deploy-report.md ] && cat artifacts/deploy/vm-deploy-report.md || echo "deploy report unavailable"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vm-deploy-artifacts
+          path: |
+            artifacts/smoke/smoke-latest.json
+            artifacts/deploy/vm-deploy-report.json
+            artifacts/deploy/vm-deploy-report.md
+          if-no-files-found: warn
